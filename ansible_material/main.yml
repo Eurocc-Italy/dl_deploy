@@ -1,0 +1,22 @@
+---
+#this is the main that runs sequentially all the playbooks necessary to 
+#build the datalake
+- import_playbook: create_vm.yml
+- import_playbook: python_installer.yml
+- import_playbook: librDL.yml
+- import_playbook: MongoUPDOWN.yml
+
+- hosts: my_vm
+  tasks:
+    - name: Execute Python Script about the API creation
+      ansible.builtin.script: /home/centos/ansible_material/crud_plain.py
+      args:
+        executable: python3
+
+    - name: Start FastAPI server
+      ansible.builtin.shell: nohup uvicorn crud_plain:app --host 0.0.0.0 --port 8000 &>/dev/null &
+      args:
+        chdir: /home/centos/ansible_material/
+        executable: /bin/bash
+
+

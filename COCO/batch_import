@@ -1,0 +1,17 @@
+#!/bin/bash
+
+for db in {captions,instances,person_keypoints}
+do
+    echo ""
+    echo "=== Populating database COCO - $db ==="
+    for json in {${db}_val2014.json,${db}_train2014.json}
+    do
+        base=$(basename $json .json)
+        command="mongoimport --db COCO --collection $db --file $json"
+	echo ""
+        echo "  - Importing $json"
+	echo "  - command: $command"
+	echo ""
+        $command
+    done
+done
