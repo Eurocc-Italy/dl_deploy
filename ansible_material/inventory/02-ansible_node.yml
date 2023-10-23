@@ -1,0 +1,8 @@
+virtualmachines:
+  hosts:
+    vm01:
+      ansible_host: 192.168.0.36
+      ansible_user: centos
+      ansible_ssh_private_key_file: /home/centos/.ssh/ansible_key.pem
+      ansible_python_interpreter: /home/centos/test/bin/python3
+

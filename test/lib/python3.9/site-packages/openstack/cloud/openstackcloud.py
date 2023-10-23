@@ -1,0 +1,777 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import copy
+import functools
+import queue
+import warnings
+
+import dogpile.cache
+import keystoneauth1.exceptions
+import keystoneauth1.session
+import requests.models
+import requestsexceptions
+
+from openstack import _log
+from openstack.cloud import _floating_ip
+from openstack.cloud import _object_store
+from openstack.cloud import _utils
+from openstack.cloud import exc
+from openstack.cloud import meta
+import openstack.config
+from openstack.config import cloud_region as cloud_region_mod
+from openstack import exceptions
+from openstack import proxy
+from openstack import utils
+
+DEFAULT_SERVER_AGE = 5
+DEFAULT_PORT_AGE = 5
+DEFAULT_FLOAT_AGE = 5
+_CONFIG_DOC_URL = _floating_ip._CONFIG_DOC_URL
+DEFAULT_OBJECT_SEGMENT_SIZE = _object_store.DEFAULT_OBJECT_SEGMENT_SIZE
+# This halves the current default for Swift
+DEFAULT_MAX_FILE_SIZE = _object_store.DEFAULT_MAX_FILE_SIZE
+OBJECT_CONTAINER_ACLS = _object_store.OBJECT_CONTAINER_ACLS
+
+
+class _OpenStackCloudMixin:
+    """Represent a connection to an OpenStack Cloud.
+
+    OpenStackCloud is the entry point for all cloud operations, regardless
+    of which OpenStack service those operations may ultimately come from.
+    The operations on an OpenStackCloud are resource oriented rather than
+    REST API operation oriented. For instance, one will request a Floating IP
+    and that Floating IP will be actualized either via neutron or via nova
+    depending on how this particular cloud has decided to arrange itself.
+
+    :param bool strict: Only return documented attributes for each resource
+                        as per the Data Model contract. (Default False)
+    """
+
+    _OBJECT_MD5_KEY = 'x-sdk-md5'
+    _OBJECT_SHA256_KEY = 'x-sdk-sha256'
+    _OBJECT_AUTOCREATE_KEY = 'x-sdk-autocreated'
+    _OBJECT_AUTOCREATE_CONTAINER = 'images'
+
+    # NOTE(shade) shade keys were x-object-meta-x-shade-md5 - we need to check
+    #             those in freshness checks so that a shade->sdk transition
+    #             doesn't result in a re-upload
+    _SHADE_OBJECT_MD5_KEY = 'x-object-meta-x-shade-md5'
+    _SHADE_OBJECT_SHA256_KEY = 'x-object-meta-x-shade-sha256'
+    _SHADE_OBJECT_AUTOCREATE_KEY = 'x-object-meta-x-shade-autocreated'
+
+    def __init__(self):
+        super(_OpenStackCloudMixin, self).__init__()
+
+        self.log = _log.setup_logging('openstack')
+
+        self.name = self.config.name
+        self.auth = self.config.get_auth_args()
+        self.default_interface = self.config.get_interface()
+        self.force_ipv4 = self.config.force_ipv4
+
+        (self.verify, self.cert) = self.config.get_requests_verify_args()
+
+        # Turn off urllib3 warnings about insecure certs if we have
+        # explicitly configured requests to tell it we do not want
+        # cert verification
+        if not self.verify:
+            self.log.debug(
+                "Turning off Insecure SSL warnings since verify=False"
+            )
+            category = requestsexceptions.InsecureRequestWarning
+            if category:
+                # InsecureRequestWarning references a Warning class or is None
+                warnings.filterwarnings('ignore', category=category)
+
+        self._disable_warnings = {}
+
+        cache_expiration_time = int(self.config.get_cache_expiration_time())
+        cache_class = self.config.get_cache_class()
+        cache_arguments = self.config.get_cache_arguments()
+
+        self._cache_expirations = dict()
+
+        if cache_class != 'dogpile.cache.null':
+            self.cache_enabled = True
+        else:
+            self.cache_enabled = False
+
+            # TODO(gtema): delete it with the standalone cloud layer caching
+
+            def _fake_invalidate(unused):
+                pass
+
+            class _FakeCache:
+                def invalidate(self):
+                    pass
+
+            # Don't cache list_servers if we're not caching things.
+            # Replace this with a more specific cache configuration
+            # soon.
+            self._SERVER_AGE = 0
+            self._PORT_AGE = 0
+            self._FLOAT_AGE = 0
+            self._cache = _FakeCache()
+            # Undecorate cache decorated methods. Otherwise the call stacks
+            # wind up being stupidly long and hard to debug
+            for method in _utils._decorated_methods:
+                meth_obj = getattr(self, method, None)
+                if not meth_obj:
+                    continue
+                if hasattr(meth_obj, 'invalidate') and hasattr(
+                    meth_obj, 'func'
+                ):
+                    new_func = functools.partial(meth_obj.func, self)
+                    new_func.invalidate = _fake_invalidate
+                    setattr(self, method, new_func)
+
+        # Uncoditionally create cache even with a "null" backend
+        self._cache = self._make_cache(
+            cache_class, cache_expiration_time, cache_arguments
+        )
+        expirations = self.config.get_cache_expirations()
+        for expire_key in expirations.keys():
+            self._cache_expirations[expire_key] = expirations[expire_key]
+
+        # TODO(gtema): delete in next change
+        self._SERVER_AGE = 0
+        self._PORT_AGE = 0
+        self._FLOAT_AGE = 0
+
+        self._api_cache_keys = set()
+        self._container_cache = dict()
+        self._file_hash_cache = dict()
+
+        # self.__pool_executor = None
+
+        self._raw_clients = {}
+
+        self._local_ipv6 = (
+            _utils.localhost_supports_ipv6() if not self.force_ipv4 else False
+        )
+
+    def connect_as(self, **kwargs):
+        """Make a new OpenStackCloud object with new auth context.
+
+        Take the existing settings from the current cloud and construct a new
+        OpenStackCloud object with some of the auth settings overridden. This
+        is useful for getting an object to perform tasks with as another user,
+        or in the context of a different project.
+
+        .. code-block:: python
+
+          conn = openstack.connect(cloud='example')
+          # Work normally
+          servers = conn.list_servers()
+          conn2 = conn.connect_as(username='different-user', password='')
+          # Work as different-user
+          servers = conn2.list_servers()
+
+        :param kwargs: keyword arguments can contain anything that would
+                       normally go in an auth dict. They will override the same
+                       settings from the parent cloud as appropriate. Entries
+                       that do not want to be overridden can be ommitted.
+        """
+
+        if self.config._openstack_config:
+            config = self.config._openstack_config
+        else:
+            # TODO(mordred) Replace this with from_session
+            config = openstack.config.OpenStackConfig(
+                app_name=self.config._app_name,
+                app_version=self.config._app_version,
+                load_yaml_config=False,
+            )
+        params = copy.deepcopy(self.config.config)
+        # Remove profile from current cloud so that overridding works
+        params.pop('profile', None)
+
+        # Utility function to help with the stripping below.
+        def pop_keys(params, auth, name_key, id_key):
+            if name_key in auth or id_key in auth:
+                params['auth'].pop(name_key, None)
+                params['auth'].pop(id_key, None)
+
+        # If there are user, project or domain settings in the incoming auth
+        # dict, strip out both id and name so that a user can say:
+        #     cloud.connect_as(project_name='foo')
+        # and have that work with clouds that have a project_id set in their
+        # config.
+        for prefix in ('user', 'project'):
+            if prefix == 'user':
+                name_key = 'username'
+            else:
+                name_key = 'project_name'
+            id_key = '{prefix}_id'.format(prefix=prefix)
+            pop_keys(params, kwargs, name_key, id_key)
+            id_key = '{prefix}_domain_id'.format(prefix=prefix)
+            name_key = '{prefix}_domain_name'.format(prefix=prefix)
+            pop_keys(params, kwargs, name_key, id_key)
+
+        for key, value in kwargs.items():
+            params['auth'][key] = value
+
+        cloud_region = config.get_one(**params)
+        # Attach the discovery cache from the old session so we won't
+        # double discover.
+        cloud_region._discovery_cache = self.session._discovery_cache
+        # Override the cloud name so that logging/location work right
+        cloud_region._name = self.name
+        cloud_region.config['profile'] = self.name
+        # Use self.__class__ so that we return whatever this if, like if it's
+        # a subclass in the case of shade wrapping sdk.
+        return self.__class__(config=cloud_region)
+
+    def connect_as_project(self, project):
+        """Make a new OpenStackCloud object with a new project.
+
+        Take the existing settings from the current cloud and construct a new
+        OpenStackCloud object with the project settings overridden. This
+        is useful for getting an object to perform tasks with as another user,
+        or in the context of a different project.
+
+        .. code-block:: python
+
+          cloud = openstack.connect(cloud='example')
+          # Work normally
+          servers = cloud.list_servers()
+          cloud2 = cloud.connect_as_project('different-project')
+          # Work in different-project
+          servers = cloud2.list_servers()
+
+        :param project: Either a project name or a project dict as returned by
+                        `list_projects`.
+        """
+        auth = {}
+        if isinstance(project, dict):
+            auth['project_id'] = project.get('id')
+            auth['project_name'] = project.get('name')
+            if project.get('domain_id'):
+                auth['project_domain_id'] = project['domain_id']
+        else:
+            auth['project_name'] = project
+        return self.connect_as(**auth)
+
+    def global_request(self, global_request_id):
+        """Make a new Connection object with a global request id set.
+
+        Take the existing settings from the current Connection and construct a
+        new Connection object with the global_request_id overridden.
+
+        .. code-block:: python
+
+          from oslo_context import context
+          cloud = openstack.connect(cloud='example')
+          # Work normally
+          servers = cloud.list_servers()
+          cloud2 = cloud.global_request(context.generate_request_id())
+          # cloud2 sends all requests with global_request_id set
+          servers = cloud2.list_servers()
+
+        Additionally, this can be used as a context manager:
+
+        .. code-block:: python
+
+          from oslo_context import context
+          c = openstack.connect(cloud='example')
+          # Work normally
+          servers = c.list_servers()
+          with c.global_request(context.generate_request_id()) as c2:
+              # c2 sends all requests with global_request_id set
+              servers = c2.list_servers()
+
+        :param global_request_id: The `global_request_id` to send.
+        """
+        params = copy.deepcopy(self.config.config)
+        cloud_region = cloud_region_mod.from_session(
+            session=self.session,
+            app_name=self.config._app_name,
+            app_version=self.config._app_version,
+            discovery_cache=self.session._discovery_cache,
+            **params,
+        )
+
+        # Override the cloud name so that logging/location work right
+        cloud_region._name = self.name
+        cloud_region.config['profile'] = self.name
+        # Use self.__class__ so that we return whatever this is, like if it's
+        # a subclass in the case of shade wrapping sdk.
+        new_conn = self.__class__(config=cloud_region)
+        new_conn.set_global_request_id(global_request_id)
+        return new_conn
+
+    def _make_cache(self, cache_class, expiration_time, arguments):
+        return dogpile.cache.make_region(
+            function_key_generator=self._make_cache_key
+        ).configure(
+            cache_class, expiration_time=expiration_time, arguments=arguments
+        )
+
+    def _make_cache_key(self, namespace, fn):
+        fname = fn.__name__
+        if namespace is None:
+            name_key = self.name
+        else:
+            name_key = '%s:%s' % (self.name, namespace)
+
+        def generate_key(*args, **kwargs):
+            # TODO(frickler): make handling arg keys actually work
+            arg_key = ''
+            kw_keys = sorted(kwargs.keys())
+            kwargs_key = ','.join(
+                ['%s:%s' % (k, kwargs[k]) for k in kw_keys if k != 'cache']
+            )
+            ans = "_".join([str(name_key), fname, arg_key, kwargs_key])
+            return ans
+
+        return generate_key
+
+    def _get_cache(self, resource_name):
+        if resource_name and resource_name in self._resource_caches:
+            return self._resource_caches[resource_name]
+        else:
+            return self._cache
+
+    # TODO(shade) This should be replaced with using openstack Connection
+    #             object.
+    def _get_raw_client(
+        self, service_type, api_version=None, endpoint_override=None
+    ):
+        return proxy.Proxy(
+            session=self.session,
+            service_type=self.config.get_service_type(service_type),
+            service_name=self.config.get_service_name(service_type),
+            interface=self.config.get_interface(service_type),
+            endpoint_override=self.config.get_endpoint(service_type)
+            or endpoint_override,
+            region_name=self.config.get_region_name(service_type),
+        )
+
+    def pprint(self, resource):
+        """Wrapper around pprint that groks munch objects"""
+        # import late since this is a utility function
+        import pprint
+
+        new_resource = _utils._dictify_resource(resource)
+        pprint.pprint(new_resource)
+
+    def pformat(self, resource):
+        """Wrapper around pformat that groks munch objects"""
+        # import late since this is a utility function
+        import pprint
+
+        new_resource = _utils._dictify_resource(resource)
+        return pprint.pformat(new_resource)
+
+    @property
+    def _keystone_catalog(self):
+        return self.session.auth.get_access(self.session).service_catalog
+
+    @property
+    def service_catalog(self):
+        return self._keystone_catalog.catalog
+
+    def endpoint_for(self, service_type, interface=None, region_name=None):
+        """Return the endpoint for a given service.
+
+        Respects config values for Connection, including
+        ``*_endpoint_override``. For direct values from the catalog
+        regardless of overrides, see
+        :meth:`~openstack.config.cloud_region.CloudRegion.get_endpoint_from_catalog`
+
+        :param service_type: Service Type of the endpoint to search for.
+        :param interface:
+            Interface of the endpoint to search for. Optional, defaults to
+            the configured value for interface for this Connection.
+        :param region_name:
+            Region Name of the endpoint to search for. Optional, defaults to
+            the configured value for region_name for this Connection.
+
+        :returns: The endpoint of the service, or None if not found.
+        """
+
+        endpoint_override = self.config.get_endpoint(service_type)
+        if endpoint_override:
+            return endpoint_override
+        return self.config.get_endpoint_from_catalog(
+            service_type=service_type,
+            interface=interface,
+            region_name=region_name,
+        )
+
+    @property
+    def auth_token(self):
+        # Keystone's session will reuse a token if it is still valid.
+        # We don't need to track validity here, just get_token() each time.
+        return self.session.get_token()
+
+    @property
+    def current_user_id(self):
+        """Get the id of the currently logged-in user from the token."""
+        return self.session.auth.get_access(self.session).user_id
+
+    @property
+    def current_project_id(self):
+        """Get the current project ID.
+
+        Returns the project_id of the current token scope. None means that
+        the token is domain scoped or unscoped.
+
+        :raises keystoneauth1.exceptions.auth.AuthorizationFailure:
+            if a new token fetch fails.
+        :raises keystoneauth1.exceptions.auth_plugins.MissingAuthPlugin:
+            if a plugin is not available.
+        """
+        return self.session.get_project_id()
+
+    @property
+    def current_project(self):
+        """Return a ``utils.Munch`` describing the current project"""
+        return self._get_project_info()
+
+    def _get_project_info(self, project_id=None):
+        project_info = utils.Munch(
+            id=project_id,
+            name=None,
+            domain_id=None,
+            domain_name=None,
+        )
+        if not project_id or project_id == self.current_project_id:
+            # If we don't have a project_id parameter, it means a user is
+            # directly asking what the current state is.
+            # Alternately, if we have one, that means we're calling this
+            # from within a normalize function, which means the object has
+            # a project_id associated with it. If the project_id matches
+            # the project_id of our current token, that means we can supplement
+            # the info with human readable info about names if we have them.
+            # If they don't match, that means we're an admin who has pulled
+            # an object from a different project, so adding info from the
+            # current token would be wrong.
+            auth_args = self.config.config.get('auth', {})
+            project_info['id'] = self.current_project_id
+            project_info['name'] = auth_args.get('project_name')
+            project_info['domain_id'] = auth_args.get('project_domain_id')
+            project_info['domain_name'] = auth_args.get('project_domain_name')
+        return project_info
+
+    @property
+    def current_location(self):
+        """Return a ``utils.Munch`` explaining the current cloud location."""
+        return self._get_current_location()
+
+    def _get_current_location(self, project_id=None, zone=None):
+        return utils.Munch(
+            cloud=self.name,
+            # TODO(efried): This is wrong, but it only seems to be used in a
+            # repr; can we get rid of it?
+            region_name=self.config.get_region_name(),
+            zone=zone,
+            project=self._get_project_info(project_id),
+        )
+
+    # TODO(stephenfin): This looks unused? Can we delete it?
+    def _get_identity_location(self):
+        '''Identity resources do not exist inside of projects.'''
+        return utils.Munch(
+            cloud=self.name,
+            region_name=None,
+            zone=None,
+            project=utils.Munch(
+                id=None, name=None, domain_id=None, domain_name=None
+            ),
+        )
+
+    def range_search(self, data, filters):
+        """Perform integer range searches across a list of dictionaries.
+
+        Given a list of dictionaries, search across the list using the given
+        dictionary keys and a range of integer values for each key. Only
+        dictionaries that match ALL search filters across the entire original
+        data set will be returned.
+
+        It is not a requirement that each dictionary contain the key used
+        for searching. Those without the key will be considered non-matching.
+
+        The range values must be string values and is either a set of digits
+        representing an integer for matching, or a range operator followed by
+        a set of digits representing an integer for matching. If a range
+        operator is not given, exact value matching will be used. Valid
+        operators are one of: <,>,<=,>=
+
+        :param data: List of dictionaries to be searched.
+        :param filters: Dict describing the one or more range searches to
+            perform. If more than one search is given, the result will be the
+            members of the original data set that match ALL searches. An
+            example of filtering by multiple ranges::
+
+                {"vcpus": "<=5", "ram": "<=2048", "disk": "1"}
+
+        :returns: A list subset of the original data set.
+        :raises: OpenStackCloudException on invalid range expressions.
+        """
+        filtered = []
+
+        for key, range_value in filters.items():
+            # We always want to operate on the full data set so that
+            # calculations for minimum and maximum are correct.
+            results = _utils.range_filter(data, key, range_value)
+
+            if not filtered:
+                # First set of results
+                filtered = results
+            else:
+                # The combination of all searches should be the intersection of
+                # all result sets from each search. So adjust the current set
+                # of filtered data by computing its intersection with the
+                # latest result set.
+                filtered = [r for r in results for f in filtered if r == f]
+
+        return filtered
+
+    def _get_and_munchify(self, key, data):
+        """Wrapper around meta.get_and_munchify.
+
+        Some of the methods expect a `meta` attribute to be passed in as
+        part of the method signature. In those methods the meta param is
+        overriding the meta module making the call to meta.get_and_munchify
+        to fail.
+        """
+        if isinstance(data, requests.models.Response):
+            data = proxy._json_response(data)
+        return meta.get_and_munchify(key, data)
+
+    def get_name(self):
+        return self.name
+
+    def get_session_endpoint(self, service_key, **kwargs):
+        if not kwargs:
+            kwargs = {}
+        try:
+            return self.config.get_session_endpoint(service_key, **kwargs)
+        except keystoneauth1.exceptions.catalog.EndpointNotFound as e:
+            self.log.debug(
+                "Endpoint not found in %s cloud: %s", self.name, str(e)
+            )
+            endpoint = None
+        except exc.OpenStackCloudException:
+            raise
+        except Exception as e:
+            raise exc.OpenStackCloudException(
+                "Error getting {service} endpoint on {cloud}:{region}:"
+                " {error}".format(
+                    service=service_key,
+                    cloud=self.name,
+                    region=self.config.get_region_name(service_key),
+                    error=str(e),
+                )
+            )
+        return endpoint
+
+    def has_service(self, service_key, version=None):
+        if not self.config.has_service(service_key):
+            # TODO(mordred) add a stamp here so that we only report this once
+            if not (
+                service_key in self._disable_warnings
+                and self._disable_warnings[service_key]
+            ):
+                self.log.debug(
+                    "Disabling %(service_key)s entry in catalog per config",
+                    {'service_key': service_key},
+                )
+                self._disable_warnings[service_key] = True
+            return False
+        try:
+            kwargs = dict()
+            # If a specific version was requested - try it
+            if version is not None:
+                kwargs['min_version'] = version
+                kwargs['max_version'] = version
+            endpoint = self.get_session_endpoint(service_key, **kwargs)
+        except exc.OpenStackCloudException:
+            return False
+        if endpoint:
+            return True
+        else:
+            return False
+
+    def search_resources(
+        self,
+        resource_type,
+        name_or_id,
+        get_args=None,
+        get_kwargs=None,
+        list_args=None,
+        list_kwargs=None,
+        **filters,
+    ):
+        """Search resources
+
+        Search resources matching certain conditions
+
+        :param str resource_type: String representation of the expected
+            resource as `service.resource` (i.e. "network.security_group").
+        :param str name_or_id: Name or ID of the resource
+        :param list get_args: Optional args to be passed to the _get call.
+        :param dict get_kwargs: Optional kwargs to be passed to the _get call.
+        :param list list_args: Optional args to be passed to the _list call.
+        :param dict list_kwargs: Optional kwargs to be passed to the _list call
+        :param dict filters: Additional filters to be used for querying
+            resources.
+        """
+        get_args = get_args or ()
+        get_kwargs = get_kwargs or {}
+        list_args = list_args or ()
+        list_kwargs = list_kwargs or {}
+
+        # User used string notation. Try to find proper
+        # resource
+        (service_name, resource_name) = resource_type.split('.')
+        if not hasattr(self, service_name):
+            raise exceptions.SDKException(
+                "service %s is not existing/enabled" % service_name
+            )
+        service_proxy = getattr(self, service_name)
+        try:
+            resource_type = service_proxy._resource_registry[resource_name]
+        except KeyError:
+            raise exceptions.SDKException(
+                "Resource %s is not known in service %s"
+                % (resource_name, service_name)
+            )
+
+        if name_or_id:
+            # name_or_id is definitely not None
+            try:
+                resource_by_id = service_proxy._get(
+                    resource_type, name_or_id, *get_args, **get_kwargs
+                )
+                return [resource_by_id]
+            except exceptions.ResourceNotFound:
+                pass
+
+        if not filters:
+            filters = {}
+
+        if name_or_id:
+            filters["name"] = name_or_id
+        list_kwargs.update(filters)
+
+        return list(
+            service_proxy._list(resource_type, *list_args, **list_kwargs)
+        )
+
+    def project_cleanup(
+        self,
+        dry_run=True,
+        wait_timeout=120,
+        status_queue=None,
+        filters=None,
+        resource_evaluation_fn=None,
+        skip_resources=None,
+    ):
+        """Cleanup the project resources.
+
+        Cleanup all resources in all services, which provide cleanup methods.
+
+        :param bool dry_run: Cleanup or only list identified resources.
+        :param int wait_timeout: Maximum amount of time given to each service
+            to comlete the cleanup.
+        :param queue status_queue: a threading queue object used to get current
+            process status. The queue contain processed resources.
+        :param dict filters: Additional filters for the cleanup (only resources
+            matching all filters will be deleted, if there are no other
+            dependencies).
+        :param resource_evaluation_fn: A callback function, which will be
+            invoked for each resurce and must return True/False depending on
+            whether resource need to be deleted or not.
+        :param skip_resources: List of specific resources whose cleanup should
+            be skipped.
+        """
+        dependencies = {}
+        get_dep_fn_name = '_get_cleanup_dependencies'
+        cleanup_fn_name = '_service_cleanup'
+        if not status_queue:
+            status_queue = queue.Queue()
+        for service in self.config.get_enabled_services():
+            try:
+                if hasattr(self, service):
+                    proxy = getattr(self, service)
+                    if (
+                        proxy
+                        and hasattr(proxy, get_dep_fn_name)
+                        and hasattr(proxy, cleanup_fn_name)
+                    ):
+                        deps = getattr(proxy, get_dep_fn_name)()
+                        if deps:
+                            dependencies.update(deps)
+            except (
+                exceptions.NotSupported,
+                exceptions.ServiceDisabledException,
+            ):
+                # Cloud may include endpoint in catalog but not
+                # implement the service or disable it
+                pass
+        dep_graph = utils.TinyDAG()
+        for k, v in dependencies.items():
+            dep_graph.add_node(k)
+            for dep in v['before']:
+                dep_graph.add_node(dep)
+                dep_graph.add_edge(k, dep)
+            for dep in v.get('after', []):
+                dep_graph.add_edge(dep, k)
+
+        cleanup_resources = dict()
+
+        for service in dep_graph.walk(timeout=wait_timeout):
+            fn = None
+            try:
+                if hasattr(self, service):
+                    proxy = getattr(self, service)
+                    cleanup_fn = getattr(proxy, cleanup_fn_name, None)
+                    if cleanup_fn:
+                        fn = functools.partial(
+                            cleanup_fn,
+                            dry_run=dry_run,
+                            client_status_queue=status_queue,
+                            identified_resources=cleanup_resources,
+                            filters=filters,
+                            resource_evaluation_fn=resource_evaluation_fn,
+                            skip_resources=skip_resources,
+                        )
+            except exceptions.ServiceDisabledException:
+                # same reason as above
+                pass
+            if fn:
+                self._pool_executor.submit(
+                    cleanup_task, dep_graph, service, fn
+                )
+            else:
+                dep_graph.node_done(service)
+
+        for count in utils.iterate_timeout(
+            timeout=wait_timeout,
+            message="Timeout waiting for cleanup to finish",
+            wait=1,
+        ):
+            if dep_graph.is_complete():
+                return
+
+
+def cleanup_task(graph, service, fn):
+    try:
+        fn()
+    except Exception:
+        log = _log.setup_logging('openstack.project_cleanup')
+        log.exception('Error in the %s cleanup function' % service)
+    finally:
+        graph.node_done(service)

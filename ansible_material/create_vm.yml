@@ -1,0 +1,120 @@
+---
+- name: Create network, security group, and launch a server
+  hosts: virtualmachines
+  gather_facts: no
+  vars_files:
+    - parameters.yml
+    - clouds.yaml
+
+  tasks:
+    
+    - name: Create a new OpenStack key pair
+      openstack.cloud.keypair:
+        name: "{{ key_name }}"
+        state: present
+        cloud: "{{ cloud }}"
+      register: keypair
+
+
+    - name: Save private key
+      copy:
+        content: "{{ keypair.keypair.private_key }}"
+        dest: "{{private_key_path}}"
+        mode: 0600
+
+    - name: Save public key
+      copy:
+        content: "{{ keypair.keypair.public_key }}"
+        dest: "{{public_key_path}}"
+        mode: 0644
+           
+    - name: Create a network
+      openstack.cloud.network:
+        state: present
+        name: "{{ network_name }}"
+        admin_state_up: "{{ admin_state_up | default('yes') }}"
+        cloud: "openstack"
+      register: network
+
+    - name: Create a subnet
+      openstack.cloud.subnet:
+        state: present
+        network_name: "{{ network.network.name }}"
+        name: "{{ subnet_name }}"
+        cidr: "{{ subnet_cidr }}"
+        gateway_ip: "{{ gateway_ip }}"
+        ip_version: 4
+        cloud: "{{ cloud }}"
+      register: subnet
+
+    - name: Create a router
+      openstack.cloud.router:
+        state: present
+        name: "{{ router_name }}"
+        network: "{{ external_network }}"
+        interfaces:
+          - "{{ subnet.id }}"
+        cloud: "{{ cloud }}"
+      register: router
+
+    - name: Create a security group
+      openstack.cloud.security_group:
+        state: present
+        name: "{{ security_group_name }}"
+        cloud: "{{ cloud }}"
+      register: security_group
+
+    - name: Add security group rules
+      openstack.cloud.security_group_rule:
+        security_group: "{{ security_group_name }}"
+        protocol: "{{ item.protocol }}"
+        port_range_min: "{{ item.port_range_min }}"
+        port_range_max: "{{ item.port_range_max }}"
+        remote_ip_prefix: "{{ item.remote_ip_prefix }}"
+        cloud: "{{ cloud }}"
+      with_items:
+        - { protocol: 'tcp', port_range_min: 22, port_range_max: 22, remote_ip_prefix: '0.0.0.0/0' }
+        - { protocol: 'tcp', port_range_min: 80, port_range_max: 80, remote_ip_prefix: '0.0.0.0/0' }
+        - { protocol: 'tcp', port_range_min: 443, port_range_max: 443, remote_ip_prefix: '0.0.0.0/0' }
+        - { protocol: 'tcp', port_range_min: 27016, port_range_max: 27016, remote_ip_prefix: '0.0.0.0/0'}
+
+    - name: Create a new VM
+      openstack.cloud.server:
+        state: present
+        name: "{{ vm_name }}"
+        image: "{{ vm_image }}"
+        flavor_ram: "{{ vm_flavor_ram }}"
+        boot_from_volume: True
+        volume_size: "{{ vm_volume_size }}"
+        security_groups: "{{ security_group.security_group.name }}"
+        network: "{{ network.network.name }}"
+        key_name: "{{ key_name }}"
+        auto_ip: "{{ auto_ip | default('yes') }}"
+      register: server
+
+
+    - name: Get floating IP details
+      openstack.cloud.floating_ip:
+        server: "{{ server.server.name }}"
+        reuse: yes
+      register: floating_ip_details
+
+    - name: Add new VM to inventory
+      add_host:
+        name: "{{ server.server.name }}"
+        ansible_host: "{{ floating_ip_details.floating_ip.floating_ip_address }}"
+        ansible_user: centos
+        ansible_ssh_private_key_file: "{{private_key_path}}"
+        ansible_python_interpreter: /usr/bin/python3
+        groups: dynamically_created_hosts
+
+- name: Generate static inventory file from current in-memory inventory
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Create static inventory file from template
+      template:
+        src: template.j2
+        dest: /home/centos/ansible_material/inventory/03_inventory.yml
+

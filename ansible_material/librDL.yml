@@ -1,0 +1,119 @@
+
+---
+# This playbook sets up a Datalake service with MongoDB and boto libraries
+
+- name: Setup Datalake service
+  hosts: my_vm  # replace with your VM group or host(s)
+  become: yes  # this allows the playbook to run commands with sudo
+  gather_facts: no
+  tasks: 
+    # This task ensures the EPEL repo is added for CentOS/RHEL 7. If you're using CentOS 8 or another distribution, this may need to be adjusted.
+    - name: Ensure EPEL repository is present
+      yum:
+        name: epel-release
+        state: present
+
+    # This task checks if pip3 is installed, and if not, it installs it.
+    - name: Check if pip3 is installed
+      shell: "which pip3"
+      ignore_errors: true
+      register: pip3_installed
+
+    - name: Install pip3
+      yum:
+        name: python3-pip
+        state: present
+      when: pip3_installed.rc != 0
+
+    # This task checks if MongoDB is already installed, and if not, it installs it.
+    - name: Check if MongoDB is installed
+      shell: "rpm -q mongodb"
+      ignore_errors: true
+      register: mongodb_installed
+      
+    - name: Add MongoDB Repository
+      become: yes
+      copy:
+        dest: /etc/yum.repos.d/mongodb-org-4.4.repo
+        content: |
+          [mongodb-org-4.4]
+          name=MongoDB Repository
+          baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.4/x86_64/
+          gpgcheck=1
+          enabled=1
+          gpgkey=https://www.mongodb.org/static/pgp/server-4.4.asc
+
+    - name: Install MongoDB
+      yum:
+        name: mongodb-org
+        state: present
+      when: mongodb_installed.rc != 0  # this line is the "if clause". If MongoDB is not installed (rc!=0), then it will be installed
+
+
+    # This task checks if boto libraries are already installed, and if not, it installs them.
+    - name: Check if boto is installed
+      shell: "pip3 list | grep boto"
+      ignore_errors: true
+      register: boto_installed
+
+    - name: Install boto libraries
+      pip:
+        name:
+          - boto
+          - boto3
+        executable: pip3
+      when: boto_installed.rc != 0
+
+   # This task checks if FastAPI is installed, and if not, it installs it
+    - name: Check if FastAPI is installed
+      shell: "pip3 show fastapi"
+      ignore_errors: true
+      register: fastapi_installed
+
+    - name: Install FastAPI
+      pip:
+        name: fastapi
+        executable: pip3
+      when: fastapi_installed.rc != 0  
+
+ # This task checks if Uvicorn is installed, and if not, it installs it
+
+    - name: Check if Uvicorn is installed
+      shell: "pip3 show uvicorn"
+      ignore_errors: true
+      register: uvicorn_installed
+
+    - name: Install Uvicorn
+      pip:
+        name: uvicorn
+        executable: pip3
+      when: uvicorn_installed.rc != 0 
+
+ # This task checks if Motor is installed, and if not, it installs it
+
+    - name: Check if Motor is installed
+      shell: "pip3 show motor"
+      ignore_errors: true
+      register: motor_installed
+
+    - name: Install Motor
+      pip:
+        name: motor
+        executable: pip3
+      when: motor_installed.rc != 0
+
+ # This task checks if UUID is installed, and if not, it installs it
+
+    - name: Check if UUID is available
+      shell: python3 -c "import uuid"
+      ignore_errors: true
+      register: uuid_installed
+
+    - debug:
+        msg: "UUID is available."
+      when: uuid_installed.rc == 0
+
+    - debug:
+        msg: "UUID is not available."
+      when: uuid_installed.rc != 0 
+
