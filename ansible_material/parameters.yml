@@ -26,8 +26,8 @@ security_group_name: "my_security_group"
 # VM parameters
 # The vm_image must be known in advance and provided in the tenant to be used.
 vm_name: "my_vm"
-vm_image: "CentOS-7-x86_64-GenericCloud-2009"
-vm_flavor_ram: 512
+vm_image: "CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64"
+vm_flavor_ram: 16000
 vm_volume_size: 10
 key_name: "my_key"
 private_key_path: "/home/centos/.ssh/my_vm/my_private.pem"
