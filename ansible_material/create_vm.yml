@@ -21,6 +21,8 @@
         content: "{{ keypair.keypair.private_key }}"
         dest: "{{private_key_path}}"
         mode: 0600
+      when:
+        - keypair.keypair.private_key != None
 
     - name: Save public key
       copy:

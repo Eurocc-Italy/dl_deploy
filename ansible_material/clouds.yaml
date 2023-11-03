@@ -1,10 +1,11 @@
-# This is a clouds.yaml file, which can be used by OpenStack tools as a source
+        # This is a clouds.yaml file, which can be used by OpenStack tools as a source
 # of configuration on how to connect to a cloud. If this is your only cloud,
 # just put this file in ~/.config/openstack/clouds.yaml and tools like
 # python-openstackclient will just work with no further config. (You will need
 # to add your password to the auth section)
 # If you have more than one cloud account, add the cloud entry to the clouds
 # section of your existing file and you can refer to them by name with
+# OS_CLOUD=openstack or --os-cloud=openstack
 clouds:
   openstack:
     
@@ -12,12 +13,12 @@ clouds:
       
       auth_url: https://adacloud.hpc.cineca.it:5000
       
-      application_credential_id: "e2b6f62ccaf94833a0f4c43c21d3d4d2"
-      application_credential_secret: "g1Yk1ULbOuOCnafv02lHv5FqLElKXTI8TKXFottMDMFof7OXs5UDRT2tRbdBCnKuHl38PXvSNKHhvM7H-SM2wQ"
+      application_credential_id: "2d8fbd2fff5d46e3a74e4039f4c42029"
+      application_credential_secret: "agtdTBPZY6m-dwXbg0vG5z5n2gq6PpJyPNCwK88TH4a0RvmpSn_vM9Ae-__mrVjPi_6CzteWs74ZvdhOZc_4rw"
+    
       
         
     region_name: "RegionOne"
-        
       
     interface: "public"
     identity_api_version: 3
