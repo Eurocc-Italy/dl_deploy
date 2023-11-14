@@ -83,27 +83,15 @@
       delegate_to: localhost
       run_once: true
       command: "/home/centos/test/bin/ansible-galaxy collection install community.mongodb"
-   
-    - name: Change bindIp in mongod.conf
-      become: yes
-      lineinfile:
-        path: /etc/mongod.conf
-        regexp: '^  bindIp: 127.0.0.1'
-        line: '  bindIp: 0.0.0.0'
-        backrefs: yes 
-   
-    - name: Print the hostname
-      debug:
-              msg: "The hostname of the localhost is {{ ansible_hostname }}"
     
     - name: Create MongoDB user
       delegate_to: my_vm
       community.mongodb.mongodb_user:
-        database: "admin"
+        database: "datalake"
         name: "user"
         password: "passwd"
         roles:
-          - db: "metadata"
+          - db: "datalake"
             role: "readWrite"
         state: present
 
