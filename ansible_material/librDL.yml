@@ -91,10 +91,6 @@
         regexp: '^  bindIp: 127.0.0.1'
         line: '  bindIp: 0.0.0.0'
         backrefs: yes 
-   
-    - name: Print the hostname
-      debug:
-              msg: "The hostname of the localhost is {{ ansible_hostname }}"
     
     - name: Create MongoDB user
       delegate_to: my_vm
