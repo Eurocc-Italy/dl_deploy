@@ -1,0 +1,32 @@
+---
+
+- name: Check OpenStack Authention.
+  openstack.cloud.auth:
+    cloud: "{{ dl_cloud }}"
+
+- name: OpenStack External Network Checks
+  block:
+  - name: Fetch OpenStack External Network info
+    openstack.cloud.networks_info:
+      cloud: "{{ dl_cloud }}"
+      name:  "{{ openstack_external_network }}"
+    register: r_net_list
+
+  - name: Check if External Network exists
+    fail:
+      msg: "{{ 'No external network found with name ' ~ openstack_external_network }}"
+    when: 
+    - 'r_net_list.networks | length == 0'
+
+  - name: Check if there is more networks with the same name.
+    fail:
+      msg: "{{ 'More than one external network found with the name ' ~ openstack_external_network }}"
+    when: 'r_net_list.networks | length > 1'
+
+  ##r_net_list.networks | length == 1 !
+  - name: Check if the network is an OpenStack External Network
+    ansible.builtin.assert:
+      that:
+        - r_net_list.networks[0].is_router_external
+      fail_msg: "{{openstack_external_network ~ ' is not an external network'}}"
+      quiet: true

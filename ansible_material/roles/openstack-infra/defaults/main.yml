@@ -1,0 +1,15 @@
+---
+# defaults file for openstack-infra
+dl_cloud: 'openstack'
+
+dl_key_name: 'dl_ssh_key'
+
+
+dl_private_network: dlaas_private
+
+dl_subnet_name: 'dtaas_subnet'
+dl_subnet_cidr: 10.0.63.0/24
+dl_subnet_gateway: 10.0.63.1
+
+dl_router_name: 'r1_prv_to_external'
+dl_security_group_name: 'dlaas_security_group'

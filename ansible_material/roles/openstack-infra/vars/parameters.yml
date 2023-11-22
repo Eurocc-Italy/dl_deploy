@@ -29,10 +29,10 @@ vm_name: "my_vm"
 vm_image: "CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64"
 vm_flavor_ram: 16000
 vm_volume_size: 10
-key_name: "my_key"
+
 private_key_path: "/home/centos/.ssh/my_vm/my_private.pem"
 public_key_path: "/home/centos/.ssh/my_vm/my_public.pub"
-auto_ip: yes
+auto_ip: yesu
 
 
 cloud: "openstack"
