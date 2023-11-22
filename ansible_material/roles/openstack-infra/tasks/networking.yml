@@ -1,0 +1,38 @@
+---
+# This task return without changes if network exists, and fails if there is more then one networks with the name {{ dl_private_network }}
+- name: Create dtaas network in OpenStack Cloud
+  openstack.cloud.network:
+    state: present
+    name: "{{ dl_private_network }}"
+    admin_state_up: "{{ admin_state_up | default('yes') }}"
+    cloud: "openstack"
+  register: r_create_network
+
+- name: Create a subnet in dtaas's OpenStack network
+  openstack.cloud.subnet:
+        state: present
+        network_name: "{{ r_create_network.network.name }}"
+        name: "{{ dl_subnet_name }}"
+        cidr: "{{ dl_subnet_cidr }}"
+        gateway_ip: "{{ dl_subnet_gateway }}"
+        ip_version: 4
+        cloud: "{{ dl_cloud }}"
+  register: r_create_subnet
+
+- name: Create a router
+  openstack.cloud.router:
+        state: present
+        name: "{{ dl_router_name }}"
+        network: "{{ openstack_external_network }}"
+        interfaces:
+          - "{{ r_create_subnet.id }}"
+        cloud: "{{ dl_cloud }}"
+  register: r_create_router_prv_to_external
+
+- name: Create a security group for dtaas's Openstack Instance
+  openstack.cloud.security_group:
+        state: present
+        name: "{{ dl_security_group_name }}"
+        cloud: "{{ dl_cloud }}"
+  register: security_group
+  

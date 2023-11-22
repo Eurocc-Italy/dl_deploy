@@ -30,34 +30,6 @@
         dest: "{{public_key_path}}"
         mode: 0644
            
-    - name: Create a network
-      openstack.cloud.network:
-        state: present
-        name: "{{ network_name }}"
-        admin_state_up: "{{ admin_state_up | default('yes') }}"
-        cloud: "openstack"
-      register: network
-
-    - name: Create a subnet
-      openstack.cloud.subnet:
-        state: present
-        network_name: "{{ network.network.name }}"
-        name: "{{ subnet_name }}"
-        cidr: "{{ subnet_cidr }}"
-        gateway_ip: "{{ gateway_ip }}"
-        ip_version: 4
-        cloud: "{{ cloud }}"
-      register: subnet
-
-    - name: Create a router
-      openstack.cloud.router:
-        state: present
-        name: "{{ router_name }}"
-        network: "{{ external_network }}"
-        interfaces:
-          - "{{ subnet.id }}"
-        cloud: "{{ cloud }}"
-      register: router
 
     - name: Create a security group
       openstack.cloud.security_group:

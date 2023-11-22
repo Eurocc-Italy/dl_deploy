@@ -1,0 +1,5 @@
+---
+virtualenv: /opt/venv/dtaas
+ansible_python_interpreter: "{{ virtualenv is none | ternary('python3', virtualenv ~ '/bin/python' ) }}"
+dl_cloud: 'openstack'
+openstack_external_network: 'provider_1840'

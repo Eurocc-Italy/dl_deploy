@@ -1,0 +1,9 @@
+---
+- name: test role
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: prechecks 
+      import_role: 
+        name: openstack-infra
+        tasks_from: prechecks

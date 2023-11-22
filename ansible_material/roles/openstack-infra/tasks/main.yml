@@ -1,0 +1,5 @@
+---
+# tasks file for openstack-infra
+# This task return without changes if network exists, and fails if there is more then one networks with the name {{ dl_private_network }}
+
+- include_tasks: networking.yml
