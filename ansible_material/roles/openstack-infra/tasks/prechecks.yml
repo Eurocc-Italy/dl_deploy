@@ -4,7 +4,7 @@
   openstack.cloud.auth:
     cloud: "{{ dl_cloud }}"
 
-- name: OpenStack External Network Checks
+- name: Checks OpenStack External Network 
   block:
   - name: Fetch OpenStack External Network info
     openstack.cloud.networks_info:
@@ -30,3 +30,15 @@
         - r_net_list.networks[0].is_router_external
       fail_msg: "{{openstack_external_network ~ ' is not an external network'}}"
       quiet: true
+      
+- name: Checks OpenStack Cloud Image
+  block:
+  - name: Fetch OpenStack Cloud Image info
+    openstack.cloud.image_info:
+      cloud: "{{ dl_cloud }}"
+      name:  "{{ dl_cloud_image }}"
+    register: r_image_list
+  - name: Check if cloud image exitsts
+    assert:
+      that:
+        - r_image_list.images | length > 0

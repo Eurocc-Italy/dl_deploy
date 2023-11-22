@@ -32,7 +32,7 @@ vm_volume_size: 10
 
 private_key_path: "/home/centos/.ssh/my_vm/my_private.pem"
 public_key_path: "/home/centos/.ssh/my_vm/my_public.pub"
-auto_ip: yesu
+auto_ip: yes
 
 
 cloud: "openstack"

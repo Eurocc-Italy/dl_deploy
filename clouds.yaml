@@ -1,0 +1,12 @@
+clouds:
+  openstack:
+    verify: False
+    auth:
+      auth_url: https://172.18.36.10:5000
+      application_credential_id: "8802e2fde99e45a0937dab65d98d0422"
+      application_credential_secret: "9zXCTu9Lnrr6BQBNn76apbrHfpcWZWQtpbPn0aRZ0pfP7w2P5Pm-KruNXcHHNZ29fO5Cwj40kfVJ3QtjratyaA"
+    region_name: "RegionOne"
+    interface: "public"
+    identity_api_version: 3
+    auth_type: "v3applicationcredential"
+

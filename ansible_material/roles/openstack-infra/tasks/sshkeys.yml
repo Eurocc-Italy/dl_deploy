@@ -1,0 +1,52 @@
+---
+  - name: Checks public key exists
+    ansible.builtin.stat:
+      path: "{{ dl_instance_sshpub_path }}"
+    register: r_ssh_pub
+  - name: Debug
+    debug:
+  #    msg: "{{ r_ssh_pub }}"
+      msg: "{{ dl_os_sshkey_name }}"
+
+  - name: Generate SSH Keys
+    block:
+      - name: Create a new OpenStack key pair
+        openstack.cloud.keypair:
+          name: "{{ dl_os_sshkey_name }}"
+          state: present
+          cloud: "{{ dl_cloud }}"
+        register: r_create_keypair
+
+      - name: Save private key
+        copy:
+          content: "{{ r_create_keypair.keypair.private_key }}"
+          dest: "{{ dl_instance_sshpvt_path }}"
+          mode: 0600
+        when:
+          - r_create_keypair.keypair.private_key != None
+
+      - name: Save public key
+        copy:
+          content: "{{ r_create_keypair.keypair.public_key }}"
+          dest: "{{dl_instance_sshpub_path}}"
+          mode: 0644
+      - name:
+        pause:
+          prompt: |
+            Ssh Generated Keys
+              "{{ dl_instance_sshpub_path }}"
+              "{{ dl_instance_sshpvt_path }}"
+            -- Press Enter to Continue -- 
+    when:
+      - not r_ssh_pub.stat.exists
+    
+  - name: Import Custom SSH key
+    block:
+      - name: Import Custom SSH key
+        openstack.cloud.keypair:
+          name: "{{ dl_os_sshkey_name }}"
+          public_key_file: "{{ dl_instance_sshpub_path }}"
+          state: present
+          cloud: "{{ dl_cloud }}"
+    when:
+      - r_ssh_pub.stat.exists

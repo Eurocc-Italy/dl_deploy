@@ -1,0 +1,23 @@
+---
+- name: Create Openstack DLaaS Instance 
+  openstack.cloud.server:
+    state: present
+    name: "{{ dl_instance_name }}"
+    image: "{{ dl_cloud_image }}"
+    flavor_ram: "{{ dl_instance_ram }}"
+    boot_from_volume: True
+    volume_size: "{{ dl_instance_volume_size }}"
+    security_groups: "{{ dl_security_group_name }}"
+    network: "{{ dl_private_network }}"
+    key_name: "{{ dl_os_sshkey_name}}"
+    auto_ip: 'no'
+    cloud: "{{dl_cloud}}"
+  register: r_create_instance
+
+- name: Get a Floating IP address and Assign it to DLaaS Instance
+  openstack.cloud.floating_ip:
+    server: "{{ r_create_instance.server.name }}"
+    cloud: "{{dl_cloud}}"
+    network: "{{ openstack_external_network }}"
+    reuse: yes
+  register: r_floating_ip
