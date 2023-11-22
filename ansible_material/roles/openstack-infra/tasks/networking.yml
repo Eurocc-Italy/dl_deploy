@@ -34,5 +34,14 @@
         state: present
         name: "{{ dl_security_group_name }}"
         cloud: "{{ dl_cloud }}"
-  register: security_group
-  
+  register: r_security_group
+
+- name: Add rules to the dtaas security group
+  openstack.cloud.security_group_rule:
+        security_group: "{{ dl_security_group_name }}"
+        protocol: "{{ item.protocol }}"
+        port_range_min: "{{ item.port_range_min }}"
+        port_range_max: "{{ item.port_range_max }}"
+        remote_ip_prefix: "{{ item.remote_ip_prefix }}"
+        cloud: "{{dl_cloud }}"
+  with_items: "{{ dl_security_group_rules }}"

@@ -1,15 +1,30 @@
 ---
-# defaults file for openstack-infra
+## defaults file for openstack-infra
 dl_cloud: 'openstack'
 
-dl_key_name: 'dl_ssh_key'
+##Compute 
+#Keys
+#local paths for generating or importing sshkey to Openstack User Account
+dl_instance_sshpub_path: "{{ lookup('env', 'HOME') ~ '/dtaas_sshkey.pub'}}"
+dl_instance_sshpvt_path: "{{ dl_instance_sshpub_path | regex_replace('\\..*', '') ~ '.key' }}"
+#Instance
+dl_os_sshkey_name: "{{ dl_instance_sshpub_path | basename | regex_replace('\\..*', '')}}"
+dl_instance_name: 'DataLake_as_a_Service'
+dl_instance_ram: 16384 #MB
+dl_instance_volume_size: 10 #GB
+#Cloud image:
+dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64'
 
-
+##Networking 
 dl_private_network: dlaas_private
-
 dl_subnet_name: 'dtaas_subnet'
 dl_subnet_cidr: 10.0.63.0/24
 dl_subnet_gateway: 10.0.63.1
 
 dl_router_name: 'r1_prv_to_external'
 dl_security_group_name: 'dlaas_security_group'
+dl_security_group_rules:
+  - { protocol: 'tcp', port_range_min: 22, port_range_max: 22, remote_ip_prefix: '0.0.0.0/0' }
+  - { protocol: 'tcp', port_range_min: 80, port_range_max: 80, remote_ip_prefix: '0.0.0.0/0' }
+  - { protocol: 'tcp', port_range_min: 443, port_range_max: 443, remote_ip_prefix: '0.0.0.0/0' }
+  - { protocol: 'tcp', port_range_min: 27016, port_range_max: 27016, remote_ip_prefix: '0.0.0.0/0'}
