@@ -1,8 +1,8 @@
 ---
-virtualenv: /opt/venv/dtaas
-ansible_python_interpreter: "{{ virtualenv is none | ternary('python3', virtualenv ~ '/bin/python' ) }}"
+
 openstack_external_network: 'provider_1840'
 dl_cloud_image: 'centos-stream-9'
+
 #dl_cloud: 'openstack'
 #dl_instance_sshpub_path: '$HOME/dtaas_sshkey.pub'
 #dl_private_network: dlaas_private

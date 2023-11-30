@@ -12,7 +12,11 @@
     key_name: "{{ dl_os_sshkey_name}}"
     auto_ip: 'no'
     cloud: "{{dl_cloud}}"
+    userdata: "{{dl_instance_user_data}}"
   register: r_create_instance
+  tags:
+    - infra
+    - vm 
 
 - name: Get a Floating IP address and Assign it to DLaaS Instance
   openstack.cloud.floating_ip:
@@ -20,4 +24,7 @@
     cloud: "{{dl_cloud}}"
     network: "{{ openstack_external_network }}"
     reuse: yes
-  register: r_floating_ip
+  register: r_get_floating_ip_info
+  tags:
+    - infra
+    - vm

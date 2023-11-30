@@ -5,4 +5,14 @@
 - include_tasks: prechecks.yml
 - include_tasks: networking.yml
 - include_tasks: sshkeys.yml
+  tags:
+    - infra
+    - vm
 - include_tasks: compute.yml
+  tags:
+    - vm 
+    - infra
+- include_tasks: update_inventory.yml
+  tags:
+    - vm 
+    - infra

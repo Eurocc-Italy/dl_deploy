@@ -1,0 +1,32 @@
+---
+- name: Show Python Interpreter
+  debug:
+    msg: "{{ 'ansible_python_interpreter is defined:' ~ hostvars[inventory_hostname]['ansible_python_interpreter'] is not undefined }}"
+
+- name: Create DataLake API Python Virtualenv Directory
+  become: true
+  file:
+    path: "{{ dl_instance_virtualenv }}"
+    state: directory
+    mode: "0750"
+    owner: "{{ ansible_effective_user_id }}"
+    group: "{{ ansible_effective_user_id}}"
+  when:
+    - dl_instance_virtualenv is not none
+    - hostvars[inventory_hostname]['ansible_python_interpreter'] is undefined
+    - inventory_hostname not in groups['deployer']
+  register: r_mkdir_venv
+
+- name: DataLake Python Virtualenv
+  shell:
+    cmd: "{{ 'python3' ~ ' ' ~ ' -m venv --system-site-package ' ~ dl_instance_virtualenv }}"
+  when:
+    - dl_instance_virtualenv is not none
+    - hostvars[inventory_hostname]['ansible_python_interpreter'] is undefined
+    - inventory_hostname not in groups['deployer']
+    - r_mkdir_venv.changed
+
+- name: ansbile_python_interpreter
+  set_fact:
+    ansible_python_interpreter: "{{dl_instance_ansible_python_interpreter}}" 
+  when: hostvars[inventory_hostname]['ansible_python_interpreter'] is not defined

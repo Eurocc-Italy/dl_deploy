@@ -1,0 +1,8 @@
+
+- name: Install Python packages
+  become: "{{ dl_instance_virtualenv is none }}"
+  pip:
+    name: "{{pip_packages}}"
+    executable: "{{ dl_instance_virtualenv is none | ternary('pip3', omit) }}"
+    virtualenv: "{{ dl_instance_virtualenv is none | ternary(omit, dl_instance_virtualenv) }}"
+    virtualenv_command: "{{ dl_instance_virtualenv is none |  ternary(omit, 'python3' ~ ' -m venv') }}"

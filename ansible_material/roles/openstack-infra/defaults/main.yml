@@ -1,4 +1,5 @@
 ---
+dl_instance_ansible_python_interpreter: '/usr/bin/python3'
 ## defaults file for openstack-infra
 dl_cloud: 'openstack'
 
@@ -12,6 +13,15 @@ dl_os_sshkey_name: "{{ dl_instance_sshpub_path | basename | regex_replace('\\..*
 dl_instance_name: 'DataLake_as_a_Service'
 dl_instance_ram: 16384 #MB
 dl_instance_volume_size: 10 #GB
+dl_instance_user: "datalake"
+
+dl_instance_user_data: |
+  #cloud-config
+  system_info:
+          default_user:
+            name: "{{ dl_instance_user }}"
+  packages: ['python3']
+
 #Cloud image:
 dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64'
 
