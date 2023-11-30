@@ -1,0 +1,4 @@
+---
+# defaults file for dtaas
+dl_instance_virtualenv: "/opt/dtaas"
+dl_instance_ansible_python_interpreter: "{{ dl_instance_virtualenv is none | ternary('python3', dl_instance_virtualenv ~ '/bin/python3') }}"

@@ -3,11 +3,11 @@
     ansible.builtin.stat:
       path: "{{ dl_instance_sshpub_path }}"
     register: r_ssh_pub
-  - name: Debug
-    debug:
-  #    msg: "{{ r_ssh_pub }}"
-      msg: "{{ dl_os_sshkey_name }}"
-
+    tags: 
+      - infra
+      - vm
+      - sshkey
+ 
   - name: Generate SSH Keys
     block:
       - name: Create a new OpenStack key pair
@@ -39,6 +39,10 @@
             -- Press Enter to Continue -- 
     when:
       - not r_ssh_pub.stat.exists
+    tags: 
+      - infra
+      - vm
+      - sshkey
     
   - name: Import Custom SSH key
     block:
@@ -50,3 +54,7 @@
           cloud: "{{ dl_cloud }}"
     when:
       - r_ssh_pub.stat.exists
+    tags: 
+      - infra
+      - vm
+      - sshkey

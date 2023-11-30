@@ -1,0 +1,2 @@
+virtualenv: /opt/venv/dtaas
+ansible_python_interpreter: "{{ virtualenv is none | ternary('python3', virtualenv ~ '/bin/python' ) }}"

@@ -1,8 +1,0 @@
----
-#this is the main that runs sequentially all the playbooks necessary to 
-#build the datalake
-- import_playbook: create_vm.yml
-- import_playbook: librDL.yml
-
-
-

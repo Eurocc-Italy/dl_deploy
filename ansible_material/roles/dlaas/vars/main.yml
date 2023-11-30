@@ -1,0 +1,12 @@
+---
+# vars file for dtaas
+pip_packages: 
+  - connexion == 2.14.2
+  - connexion[swagger-ui] 
+  - python_dateutil == 2.6.0
+  - setuptools
+  - swagger-ui-bundle
+  - pymongo == 4.5.0
+  - sh
+  - pyparsing
+  - sqlparse
