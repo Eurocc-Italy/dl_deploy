@@ -1,6 +1,6 @@
 ---
 
-- name: Check OpenStack Authention.
+- name: Check OpenStack Authentication.
   openstack.cloud.auth:
     cloud: "{{ dl_cloud }}"
 
