@@ -28,6 +28,7 @@
     - name: Get floating IP details
       openstack.cloud.floating_ip:
         server: "{{ server.server.name }}"
+        state: present
         reuse: yes
       register: floating_ip_details
 
