@@ -1,12 +1,12 @@
 ---
 - name: test role
-  hosts: datalake
+  hosts: cloud-infra 
   tasks:
     - include_role: 
-        name: dtaas
+        name: dlaas
         tasks_from: init
 
     - include_role: 
-        name: dtaas
+        name: dlaas
       vars:
         ansible_python_interpreter: "{{ hostvars[inventory_hostname]['ansible_python_interpreter'] }}"
