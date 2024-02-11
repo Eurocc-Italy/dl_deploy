@@ -1,22 +1,48 @@
 ---
-- name: "Add new VM to inventory"
-  add_host:
-    name: "{{ r_create_instance.server.name }}"
-    ansible_host: "{{ r_get_floating_ip_info.floating_ip.floating_ip_address }}"
-    ansible_user: "{{ dl_instance_user }}"
-    #TODO maybe avoid this
-    ansible_ssh_private_key_file: "{{ dl_instance_sshpvt_path }}"
-    groups: dynamically_created_hosts
+- name: add new host
+  ini_file:
+    dest: "{{inventory_file}}"
+    section: "cloud-infra"
+    option: "{{r_create_instance.server.name}} ansible_host"
+    value: "{{r_get_floating_ip_info.floating_ip.floating_ip_address}}"
+    state: present
+    exclusive: true
+    no_extra_spaces: true
   tags:
-   - infra 
-   - vm 
-   - inventory
-
-- name: Create static inventory file from template
+  - infra 
+  - vm 
+  - inventory
+- name: template host vars files
   template:
     src: template.j2
-    dest: "{{ inventory_dir ~ '/datalake-infra' }}"
+    dest: "{{inventory_dir ~ '/host_vars/' ~ r_create_instance.server.name }}"
+
   tags:
-    - infra 
-    - vm 
-    - inventory
+  - infra 
+  - vm 
+  - inventory
+
+
+
+#- name: "Add new VM to inventory"
+#  add_host:
+#    name: "{{ r_create_instance.server.name }}"
+#    ansible_host: "{{ r_get_floating_ip_info.floating_ip.floating_ip_address }}"
+#    ansible_user: "{{ dl_instance_user }}"
+#    #TODO maybe avoid this
+#    ansible_ssh_private_key_file: "{{ dl_instance_sshpvt_path }}"
+#    groups: dynamically_created_hosts
+#  tags:
+#   - infra 
+#   - vm 
+#   - inventory
+#
+#- name: Create static inventory file from template
+#  template:
+#    src: template.j2
+#    dest: "{{ inventory_dir ~ '/datalake-infra' }}"
+#  tags:
+#    - infra 
+#    - vm 
+#    - inventory
+#
