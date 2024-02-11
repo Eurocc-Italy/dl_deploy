@@ -7,6 +7,5 @@ pip_packages:
   - setuptools
   - swagger-ui-bundle
   - pymongo == 4.5.0
-  - sh
-  - pyparsing
-  - sqlparse
+  - DTaaS_TUI @ git+ssh://git@gitlab.hpc.cineca.it/lbabetto/DTaaS_TUI.git
+  - swagger-server @ git+ssh://git@gitlab.hpc.cineca.it/igentile/dtaas_test_api.git@s3_test#subdirectory=datalake_api

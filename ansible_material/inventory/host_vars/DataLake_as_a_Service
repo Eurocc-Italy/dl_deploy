@@ -1,4 +1,4 @@
 ansible_user: datalake
 ansible_ssh_private_key_file: /home/msardo/dtaas_sshkey.key
-
+ansible_ssh_common_args: '-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=/tmp/ansible-ssh-%h-%p-%r -o ForwardAgent=yes'
 
