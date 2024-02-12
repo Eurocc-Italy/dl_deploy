@@ -1,0 +1,6 @@
+---
+- name: t
+  hosts: all
+  tasks:
+    - name: git auth
+      command: ssh -T git@gitlab.hpc.cineca.it
