@@ -1,7 +1,7 @@
 ---
 
 openstack_external_network: 'provider_1840'
-dl_cloud_image: 'centos-stream-9'
+dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2015'
 
 #dl_cloud: 'openstack'
 #dl_instance_sshpub_path: '$HOME/dtaas_sshkey.pub'
