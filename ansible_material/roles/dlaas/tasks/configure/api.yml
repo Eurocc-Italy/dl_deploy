@@ -19,10 +19,12 @@
    dest:  "{{ansible_env.HOME }}/.config/systemd/user/dtaas-api.service"
    mode: "0666"
   notify: restart-dtaas-api
-- name:
+- name: Enable linger for dtaas-user
   command: loginctl enable-linger "{{ansible_user}}"
-- name:
+
+- name: Enable systemd unit with user scope 
   command: systemctl --user enable dtaas-api 
+  
 - name: Start API service
   systemd:
     scope: user
