@@ -3,7 +3,6 @@ Description=DTaaS API
 
 [Service]
 Type=simple
-Environment=HOME=/home/datalake/
 Restart=always
 WorkingDirectory={{ansible_env.HOME}}
 ExecStart={{ dl_instance_virtualenv }}/bin/swagger_server

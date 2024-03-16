@@ -7,17 +7,25 @@
      dest: "{{ dtaas_api_config }}"
      mode: "0666"
 
+- name: Create folder for api service
+  file:
+    path: ~/.config/systemd/user
+    state: directory
+    mode: "0755"
+
 - name: Create API service file
-  become: true
   template:
    src: api_service.j2
-   dest: /etc/systemd/system/dtaas-api.service
+   dest:  "{{ansible_env.HOME }}/.config/systemd/user/dtaas-api.service"
    mode: "0666"
   notify: restart-dtaas-api
-
+- name:
+  command: loginctl enable-linger "{{ansible_user}}"
+- name:
+  command: systemctl --user enable dtaas-api 
 - name: Start API service
-  become: true
   systemd:
+    scope: user
     name: dtaas-api.service
     enabled: true
     state: started
