@@ -1,0 +1,11 @@
+{
+  "user": "user",
+  "password": "passwd",
+  "ip": "{{ hostvars["dl_vm"]["ansible_host"] }}",
+  "port": "27017",
+  "database": "datalake",
+  "collection": "metadata",
+  "s3_endpoint_url": "{{ s3_endpoint_url }}",
+  "s3_bucket": "{{ s3_bucket }}",
+  "pfs_prefix_path": "{{ pfs_path_prefix }}"
+}
