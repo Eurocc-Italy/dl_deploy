@@ -3,7 +3,17 @@
 - name: yum-clean-metadata
   become: true
   command: 'yum clean metadata'
-- name: restart mongodb service
+
+- name: restart-mongo
+  become: true
   ansible.builtin.systemd_service:
     name: mongod
     state: restarted
+- name: restart-dtaas-api
+  become: true
+  ansible.builtin.systemd_service:
+    name: dtaas-api
+    daemon_reload: true
+    state: restarted
+
+ 

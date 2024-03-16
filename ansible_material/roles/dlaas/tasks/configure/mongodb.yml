@@ -9,6 +9,7 @@
   notify: restart-mongo
 
 - name: Enable service mongod
+  become: true
   ansible.builtin.systemd_service:
     name: mongod
     enabled: true

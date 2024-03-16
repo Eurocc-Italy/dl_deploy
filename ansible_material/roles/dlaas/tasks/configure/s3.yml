@@ -1,4 +1,5 @@
 ---
+- include_vars: s3.yml
 - name: Create folder for S3 credentials
   file:
     path: "{{ s3_config_dir}}"
