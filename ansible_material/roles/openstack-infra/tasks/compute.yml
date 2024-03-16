@@ -23,7 +23,7 @@
     server: "{{ r_create_instance.server.name }}"
     cloud: "{{dl_cloud}}"
     network: "{{ openstack_external_network }}"
-    reuse: yes
+    wait: true
   register: r_get_floating_ip_info
   tags:
     - infra

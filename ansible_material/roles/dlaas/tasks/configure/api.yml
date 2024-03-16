@@ -1,0 +1,6 @@
+---
+ - name: Create file with API environment variables
+   template:
+     src: api_env.j2
+     dest: 
+     mode: "0666"

@@ -1,3 +1,5 @@
 ---
 # tasks file for dtaas
 - include_tasks: install-deps.yml
+- include_tasks: configure.yml
+

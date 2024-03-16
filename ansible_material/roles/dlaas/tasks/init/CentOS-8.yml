@@ -1,0 +1,26 @@
+---
+#Change Centos8 yum_repositories with vault
+
+- include_vars: CentOS-8.yml
+- name: Change Yum reponitory base URL
+  become: true
+  ansible.builtin.yum_repository:
+    name: "{{ item.repository.id }}"
+    description: "{{ item.repository.name }}"
+    baseurl: "{{ item.repository.baseurl }}"
+    file: "{{ item.repository.filename }}"
+    gpgkey: "{{ item.repository.gpgkey }}"
+  notify: yum-clean-metadata
+  loop: "{{yum_repositories}}"
+
+- name: Install system packages
+  become: true
+  package:
+    name: "{{system_packages}}"
+#TODO replace it, setting appropriate python3.9 interpreter
+- name: Set Python 3.9 as the alternative for python3
+  become: true
+  alternatives:
+    name: python3
+    link: /usr/bin/python3
+    path: /usr/bin/python3.9

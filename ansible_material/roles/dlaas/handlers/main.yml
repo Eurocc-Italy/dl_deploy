@@ -1,2 +1,9 @@
 ---
 # handlers file for dtaas
+- name: yum-clean-metadata
+  become: true
+  command: 'yum clean metadata'
+- name: restart mongodb service
+  ansible.builtin.systemd_service:
+    name: mongod
+    state: restarted
