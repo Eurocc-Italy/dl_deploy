@@ -28,3 +28,9 @@
   tags:
     - infra
     - vm
+- debug:
+    msg: "{{r_get_floating_ip_info}}"
+- name: Wait SSH on Server is Ready
+  wait_for:
+    port: 22 
+    host: "{{ r_get_floating_ip_info.floating_ip.floating_ip_address }}" 

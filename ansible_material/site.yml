@@ -1,11 +1,28 @@
 ---
-- name: test role
-  hosts: localhost
-  gather_facts: false
+- name: Setup Openstack Infrastracture for DataLake as Service
+  hosts: deployer
   tasks:
-    - include_role: 
+    - include_role:
         name: openstack-infra
       tags:
         - infra
         - vm
         - inventory
+    - meta: refresh_inventory
+
+
+- name: Configure DataLake Server
+  hosts: cloud-infra 
+  tasks:
+    - include_role: 
+        name: dlaas
+        tasks_from: init
+
+    - include_role: 
+        name: dlaas
+      vars:
+        ansible_python_interpreter: "{{ hostvars[inventory_hostname]['ansible_python_interpreter'] }}"
+
+
+
+    
