@@ -1,0 +1,11 @@
+[Unit]
+Description=DTaaS API
+
+[Service]
+Type=simple
+Restart=always
+WorkingDirectory=/home/centos
+ExecStart=/home/centos/api_env/bin/swagger_server
+
+[Install]
+WantedBy=default.target
