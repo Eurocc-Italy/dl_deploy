@@ -2,4 +2,4 @@
 localhost ansible_connection=local
 
 [cloud-infra]
-DataLake_as_a_Service ansible_host=172.18.40.41
+DataLake_as_a_Service ansible_host=172.18.40.249

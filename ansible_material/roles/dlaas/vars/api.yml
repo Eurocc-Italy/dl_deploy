@@ -1,0 +1,7 @@
+---
+pfs_path_prefix: /g100_s3/DRES_s3poc
+# Constants for JWT token generation and verification
+jwt_issuer: "cineca_or_ifab"
+jwt_secret: "test-s3"  # Make sure to use a secure, unique secret in production
+jwt_lifetime_seconds: 600
+jwt_algorithm: "HS256"

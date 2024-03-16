@@ -1,0 +1,11 @@
+---
+#DTAAS-TUI server config
+config_server_user: lbabetto  # username on HPC
+config_server_host: login02-ext.g100.cineca.it  # hostname of login node
+config_server_venv_path: ~/virtualenvs/dtaas  # path of virtual environment with necessary libraries
+config_server_ssh_key: ~/.ssh/luca-g100  # path to SSH key on VM for accessing HPC
+config_server_compute_partition: g100_usr_prod  # partition used for HPC jobs
+config_server_upload_partition: g100_all_serial  # partition used for uploading to S3
+config_server_account: EUCC_staff_2  # account for HPC jobs
+config_server_qos: normal  # QoS for HPC jobs
+config_server_mail: l.babetto@cineca.it  # email address for info on HPC job status
