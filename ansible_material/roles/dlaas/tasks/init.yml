@@ -1,4 +1,8 @@
 ---
+#Specific OS Settings
+- include_tasks: "init/{{ansible_distribution}}-{{ansible_distribution_version.split('.') | first  }}.yml"
+
+#Python Settings
 - name: Show Python Interpreter
   debug:
     msg: "{{ 'ansible_python_interpreter is defined:' ~ hostvars[inventory_hostname]['ansible_python_interpreter'] is not undefined }}"
@@ -30,3 +34,4 @@
   set_fact:
     ansible_python_interpreter: "{{dl_instance_ansible_python_interpreter}}" 
   when: hostvars[inventory_hostname]['ansible_python_interpreter'] is not defined
+

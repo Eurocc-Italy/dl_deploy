@@ -1,25 +1,37 @@
 ---
 # This playbook sets up a Datalake service on CentOS 8 with MongoDB, boto libraries and others necessary for the connexion-flask api.
-- name: Setup Datalake service
-  hosts: my_vm
+- name: Update VM and install Python3.9
+  hosts: dl_vm
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Comment mirrorlist in /etc/yum.repos.d/CentOS-*
+      raw: sudo sed -i 's/^mirrorlist=/#mirrorlist=/g' /etc/yum.repos.d/CentOS-*
+
+    - name: Uncomment baseurl and switch to vault.centos.org
+      raw: sudo sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+    
+    - name: Update packages  
+      raw: sudo dnf update -y
+
+    - name: Install epel-release
+      raw: sudo dnf install -y epel-release
+
+    - name: Install Python3.9
+      raw: sudo dnf install -y python39
+  
+- name: Install necessary software
+  hosts: dl_vm
   become: yes
   gather_facts: yes
+  vars_files:
+    - parameters.yml
   tasks:
-    - name: Install Python 3.9
-      dnf:
-        name: python39
-        state: present
-
     - name: Set Python 3.9 as the alternative for python3
       alternatives:
         name: python3
         link: /usr/bin/python3
         path: /usr/bin/python3.9
-
-    - name: Create a virtual environment
-      command: python3.9 -m venv /home/centos/api_env
-      args:
-        creates: /home/centos/api_env
           
     - name: Check if MongoDB is installed
       shell: "rpm -q mongodb-org"
@@ -58,17 +70,6 @@
         executable: pip3
       when: boto_installed.rc != 0
 
-    - name: Copy requirements.txt to remote
-      copy:
-        src: /home/centos/ansible_material/datalake_api/requirements_api.txt
-        dest: /tmp/requirements_api.txt
-
-    - name: Install requirements into the virtual environment
-      pip:
-        requirements: /tmp/requirements_api.txt
-        virtualenv: /home/centos/api_env
-        virtualenv_command: /home/centos/api_env/bin/python3 -m venv
-
     - name: Install the latest version of Git
       dnf:
         name: git
@@ -78,11 +79,6 @@
       ansible.builtin.pip:
         name: pymongo
         state: present
-
-    - name: Install MongoDB community modules
-      delegate_to: localhost
-      run_once: true
-      command: "/home/centos/test/bin/ansible-galaxy collection install community.mongodb"
    
     - name: Change bindIp in mongod.conf
       become: yes
@@ -91,9 +87,14 @@
         regexp: '^  bindIp: 127.0.0.1'
         line: '  bindIp: 0.0.0.0'
         backrefs: yes 
+
+    - name: start mongod service
+      become: yes
+      service:
+        name: mongod 
+        state: started
     
     - name: Create MongoDB user
-      delegate_to: my_vm
       community.mongodb.mongodb_user:
         database: "admin"
         name: "user"
@@ -103,10 +104,91 @@
             role: "readWrite"
         state: present
 
-  handlers:
-    - name: restart mongod on localhost
-      become: yes
-      service:
-        name: mongod 
-        state: restarted
-      delegate_to: localhost
+- name: Setup Datalake
+  hosts: dl_vm
+  become: no
+  gather_facts: yes
+  vars_files:
+    - parameters.yml
+  tasks:
+
+    - name: Create a virtual environment
+      command: python3.9 -m venv ~/api_env
+      args:
+        creates: ~/api_env
+  
+    - name: Copy requirements.txt to remote
+      copy:
+        src: datalake_api/requirements_api.txt
+        dest: /tmp/requirements_api.txt
+
+    - name: Install requirements into the virtual environment
+      pip:
+        requirements: /tmp/requirements_api.txt
+        virtualenv: ~/api_env
+        virtualenv_command: ~/api_env/bin/python3 -m venv
+
+    - name: Create folder for S3 credentials
+      file:
+        path: ~/.aws
+        state: directory
+        mode: "0755"
+
+    - name: Create file with S3 credentials
+      template:
+        src: s3_config.j2
+        dest: ~/.aws/config
+        mode: "0666"
+
+    - name: Create file with API environment variables
+      template:
+        src: api_env.j2
+        dest: ~/.env
+        mode: "0666"
+
+    - name: Create folder for dtaas-tui credentials
+      file:
+        path: ~/.config/dtaas-tui
+        state: directory
+        mode: "0755"
+
+    - name: Create file with dtaas-tui client config
+      template:
+        src: config_client.j2
+        dest: ~/.config/dtaas-tui/config_client.json
+        mode: "0666"
+
+    - name: Create file with dtaas-tui server config
+      template:
+        src: config_server.j2
+        dest: ~/.config/dtaas-tui/config_server.json
+        mode: "0666"
+
+    - name: Add path export to .bashrc for DL executables
+      lineinfile:
+        dest: "~/.bashrc"
+        line: export PATH="~/api_env/bin:$PATH"
+
+    - name: Create folder for api service
+      file:
+        path: ~/.config/systemd/user
+        state: directory
+        mode: "0755"
+
+    - name: Create API service file
+      template:
+        src: api_service.j2
+        dest: ~/.config/systemd/user/dtaas-api.service
+        mode: "0666"
+
+    - name: Enable API service  # Necessary for the next task to run...
+      shell: "systemctl --user enable dtaas-api.service"
+
+    - name: Start API service
+      systemd:
+        name: dtaas-api.service
+        enabled: true
+        state: started
+        scope: user
+
+

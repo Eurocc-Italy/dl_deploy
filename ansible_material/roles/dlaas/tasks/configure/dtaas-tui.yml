@@ -1,0 +1,18 @@
+---
+- name: Create folder for dtaas-tui credentials
+  file:
+    path: "{{ dtaas_tui_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Create file with dtaas-tui client config
+  template:
+    src: config_client.j2
+    dest: "{{ dtaas_tui_config_dir ~ dtaas_tui_client_config }}"
+    mode: "0666"
+
+- name: Create file with dtaas-tui server config
+  template:
+    src: config_server.j2
+    dest: "{{ dtaas_tui_config_dir ~ dtaas_tui_server_config }}"
+    mode: "0666"

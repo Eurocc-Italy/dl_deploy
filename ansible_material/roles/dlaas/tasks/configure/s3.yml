@@ -1,0 +1,13 @@
+---
+- name: Create folder for S3 credentials
+  file:
+    path: "{{ s3_config_dir}}"
+    state: directory
+    mode: "0755"
+
+- name: Create file with S3 credentials
+  template:
+    src: s3_config.j2
+    dest: "{{ s3_config_dir ~ '/' ~ s3_config_file}}"
+    mode: "0666"
+

@@ -1,0 +1,25 @@
+---
+- name: Change bindIp in mongod.conf
+  become: yes
+  lineinfile:
+    path: /etc/mongod.conf
+    regexp: '^  bindIp: 127.0.0.1'
+    line: '  bindIp: 0.0.0.0'
+    backrefs: yes
+  notify: restart-mongo
+
+- name: Enable service mongod
+  ansible.builtin.systemd_service:
+    name: mongod
+    enabled: true
+    state: started
+
+- name: Create MongoDB user
+  community.mongodb.mongodb_user:
+    database: "admin"
+    name: "user"
+    password: "passwd"
+    roles:
+      - db: "metadata"
+        role: "readWrite"
+    state: present
