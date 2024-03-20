@@ -8,9 +8,9 @@ s3_config_dir: "{{ ansible_env.HOME ~ '/' ~ '.aws' }}"
 s3_config_file: 'config'
 
 #dtaas-tui
-dtaas_tui_config_dir: "{{ ansible_env.HOME ~  '/' ~ '.config/dtaas-tui' }}"
+dtaas_tui_config_dir: "{{ ansible_env.HOME ~  '/' ~ '.config/dlaas' }}"
 dtaas_tui_server_config: 'config_server.json' 
-dtaas_tui_client_config: 'config_client.json'
+dtaas_tui_client_config: 'config_hpc.json'
 
 #API
 dtaas_api_config: "{{ ansible_env.HOME ~ '/' ~ '.env'}}"
