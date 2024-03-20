@@ -1,5 +1,5 @@
 ---
-virtualenv: /opt/venv/dtaas
+virtualenv: /home/lbabetto/venv/ansible
 ansible_python_interpreter: "{{ virtualenv is none | ternary('python3', virtualenv ~ '/bin/python' ) }}"
 dl_private_network: dlaas2_private
 dl_subnet_name: 'dtaas2_subnet'
