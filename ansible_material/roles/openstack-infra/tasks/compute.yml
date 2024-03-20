@@ -10,7 +10,7 @@
     security_groups: "{{ dl_security_group_name }}"
     network: "{{ dl_private_network }}"
     key_name: "{{ dl_os_sshkey_name}}"
-    auto_ip: 'no'
+    auto_ip: 'yes'
     cloud: "{{dl_cloud}}"
     userdata: "{{dl_instance_user_data}}"
   register: r_create_instance
@@ -24,6 +24,7 @@
     cloud: "{{dl_cloud}}"
     network: "{{ openstack_external_network }}"
     wait: true
+    reuse: true
   register: r_get_floating_ip_info
   tags:
     - infra

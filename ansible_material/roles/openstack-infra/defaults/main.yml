@@ -11,8 +11,8 @@ dl_instance_sshpvt_path: "{{ dl_instance_sshpub_path | regex_replace('\\..*', ''
 #Instance
 dl_os_sshkey_name: "{{ dl_instance_sshpub_path | basename | regex_replace('\\..*', '')}}"
 dl_instance_name: 'DataLake_as_a_Service'
-dl_instance_ram: 16384 #MB
-dl_instance_volume_size: 10 #GB
+dl_instance_ram: 30000 #MB
+dl_instance_volume_size: 100 #GB
 dl_instance_user: "datalake"
 
 dl_instance_user_data: |
@@ -30,10 +30,16 @@ dl_subnet_name: 'dtaas_subnet'
 dl_subnet_cidr: 10.0.63.0/24
 dl_subnet_gateway: 10.0.63.1
 
+login_nodes: 130.186.24.4/30
+compute_nodes: 130.186.24.0/28
+
+setup_ip: 130.186.19.0/24
+user_ips: 130.186.19.0/24
+
 dl_router_name: 'r1_prv_to_external'
 dl_security_group_name: 'dlaas_security_group'
 dl_security_group_rules:
-  - { protocol: 'tcp', port_range_min: 22, port_range_max: 22, remote_ip_prefix: '0.0.0.0/0' }
-  - { protocol: 'tcp', port_range_min: 80, port_range_max: 80, remote_ip_prefix: '0.0.0.0/0' }
-  - { protocol: 'tcp', port_range_min: 443, port_range_max: 443, remote_ip_prefix: '0.0.0.0/0' }
-  - { protocol: 'tcp', port_range_min: 27016, port_range_max: 27016, remote_ip_prefix: '0.0.0.0/0'}
+  - { protocol: 'tcp', port_range_min: 22, port_range_max: 22, remote_ip_prefix: '{{ setup_ip }}' }
+  - { protocol: 'tcp', port_range_min: 27017, port_range_max: 27017, remote_ip_prefix: '{{ login_nodes }}'}
+  - { protocol: 'tcp', port_range_min: 27017, port_range_max: 27017, remote_ip_prefix: '{{ compute_nodes }}'}
+  - { protocol: 'tcp', port_range_min: 8080, port_range_max: 8080, remote_ip_prefix: '{{ user_ips }}'}
