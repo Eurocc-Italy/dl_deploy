@@ -7,7 +7,7 @@ pip_packages:
   - setuptools
   - swagger-ui-bundle
   - pymongo == 4.5.0
-  - swagger-server @ git+https://lbabetto:glpat-9yxsdEN_u_pr62sTT9Lb@gitlab.hpc.cineca.it/igentile/dtaas_test_api.git@s3_test#subdirectory=datalake_api
+  - swagger-server @ git+https://lbabetto:glpat-SHKz4A2W6RoJU2zFo4Pz@gitlab.hpc.cineca.it/igentile/dtaas_test_api.git@s3_test#subdirectory=datalake_api
   - boto
   - boto3
 
