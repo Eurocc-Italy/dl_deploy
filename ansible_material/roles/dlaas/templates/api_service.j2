@@ -6,6 +6,7 @@ Type=simple
 Restart=always
 WorkingDirectory={{ansible_env.HOME}}
 ExecStart={{ dl_instance_virtualenv }}/bin/swagger_server
+Environment=PATH={{ dl_instance_virtualenv }}/bin/:/home/datalake/.local/bin:/home/datalake/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
 
 [Install]
 WantedBy=default.target
