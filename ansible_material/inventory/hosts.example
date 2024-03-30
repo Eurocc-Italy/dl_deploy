@@ -1,0 +1,10 @@
+[all:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[deployer]
+localhost ansible_connection=local
+
+[hpc-infra]
+#hpc_login_node ansible_host=login02-ext.g100.cineca.it
+hpc_login_node ansible_host=
+

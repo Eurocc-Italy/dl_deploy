@@ -10,7 +10,7 @@
     security_groups: "{{ dl_security_group_name }}"
     network: "{{ dl_private_network }}"
     key_name: "{{ dl_os_sshkey_name}}"
-    auto_ip: 'yes'
+    auto_ip: 'no'
     cloud: "{{dl_cloud}}"
     userdata: "{{dl_instance_user_data}}"
   register: r_create_instance
@@ -24,7 +24,7 @@
     cloud: "{{dl_cloud}}"
     network: "{{ openstack_external_network }}"
     wait: true
-    reuse: true
+    reuse: false
   register: r_get_floating_ip_info
   tags:
     - infra
@@ -35,3 +35,14 @@
   wait_for:
     port: 22 
     host: "{{ r_get_floating_ip_info.floating_ip.floating_ip_address }}" 
+  tags: ['infra','vm']
+
+
+- name: Add HPC Login Node's host keys to DataLake Server account
+  delegate_to: DataLake_as_a_Service
+  ansible.builtin.known_hosts:
+    name: "{{ hpc_login_node }}"
+    key: "{{ item }}"
+    state: present
+  loop: "{{ hpc_login_node_ssh_host_keys }}"
+  tags: ['infra','vm']

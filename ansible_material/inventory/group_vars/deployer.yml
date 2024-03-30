@@ -1,6 +1,9 @@
 ---
-virtualenv: /home/lbabetto/venv/ansible
+#Deployer Settings
+virtualenv: /opt/dtaas/
 ansible_python_interpreter: "{{ virtualenv is none | ternary('python3', virtualenv ~ '/bin/python' ) }}"
+
+#DataLake Infrastructure Settings
 dl_private_network: dlaas2_private
 dl_subnet_name: 'dtaas2_subnet'
 dl_subnet_cidr: 10.0.65.0/24
