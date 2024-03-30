@@ -1,7 +1,7 @@
 ---
 s3_bucket: s3poc
-s3_endpoint_url: https://s3ds.g100st.cineca.it/
-s3_access_key: ACCESS
-s3_secret_key: SECRET
+s3_endpoint_url: https://172.18.36.10:6780
+s3_access_key: 9feefa260a7e4777bd6e9c3bec77d8b6
+s3_secret_key: 22bc8311836641ff9d739ca873599412
 s3_noverify_ssl: true
 s3_region: cinecahpc

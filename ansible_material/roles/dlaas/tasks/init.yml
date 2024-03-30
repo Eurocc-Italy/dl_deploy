@@ -35,3 +35,8 @@
     ansible_python_interpreter: "{{dl_instance_ansible_python_interpreter}}" 
   when: hostvars[inventory_hostname]['ansible_python_interpreter'] is not defined
 
+- name: Copy Operator HPC's SSH private key to DataLake Server account
+  copy:
+    src: "{{ hpc_operator_ssh_prv_key }}"
+    dest: "{{ansible_env.HOME}}/.ssh"
+    mode: 0400

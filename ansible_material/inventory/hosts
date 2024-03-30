@@ -1,8 +1,14 @@
+[all:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
 [deployer]
 localhost ansible_connection=local
 
+[hpc-infra]
+hpc_login_node ansible_host=login01-ext.g100.cineca.it ansible_user=bsardo00
+#hpc_login_node ansible_host=172.18.40.93 ansible_user=rocky ansible_ssh_private_key=~/dtaas_sshkey.key
+#hpc_login_node ansible_host=172.18.40.93 ansible_user=rocky ansible_ssh_private_key_file=/home/msardo/dtaas_sshkey.key
 
-[all:vars]
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
 [cloud-infra]
-DataLake_as_a_Service ansible_host=131.175.205.87
+DataLake_as_a_Service ansible_host=172.18.40.198

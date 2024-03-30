@@ -23,6 +23,13 @@
       vars:
         ansible_python_interpreter: "{{ hostvars[inventory_hostname]['ansible_python_interpreter'] }}"
 
-
-
+- name: Configure DataLake HPC Account
+  hosts: hpc-infra
+  gather_facts: false
+  tasks:
+    - include_role: 
+        name: dlaas
+        tasks_from: configure/hpc_account.yml
+      tags:
+        - hpc
     

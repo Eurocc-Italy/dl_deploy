@@ -1,0 +1,4 @@
+---
+#List of python pacakegs
+hpc_python_packages:
+ - PyYAML

@@ -1,6 +1,19 @@
 ---
 
-openstack_external_network: 'externalNetwork'
-dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64'
+openstack_external_network: 'provider_1840'
+#dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64'
+dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2015'
 
 
+login_nodes: 0.0.0.0/0
+compute_nodes: 0.0.0.0/0
+
+setup_ip: 0.0.0.0/0
+user_ips: 0.0.0.0/0
+
+hpc_login_node: login02-ext.g100.cineca.it  # hostname of login node
+hpc_login_node_ssh_host_keys:
+  - "login02-ext.g100.cineca.it ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAU+3r3ehxxGEte/veIZEMQPRgc8TAq7BBWXgPKLUO2c"
+  - "login02-ext.g100.cineca.it ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDL4dixnEZ+UW3sRKYChJMfKN5Iqc5JqAHL3MhxH756gpJKFIlEvU5hojxSJr6+fICDN+fkaDAXPNGGwvZk1ZhVqclYZeNx6vPIYMian+y+74tTyKd01+FesuMqHkLKjh5hFlyFOANRJVjC4El5fsmHLZNMQoIyELTHyJ4TA0CMoAjmEMAGV9yW3qUkoX81HVmbY76RdQZJGY2e0nU+sKs9qlx8Le4sKPilQ1S+tA0tnWucn+2bwznyXFgYgveOtmQcF61eILnW8oARU6GRCfGY3NEfysJggA59G7HENeCz9MshMYWutU4XUkGZxtQQhoDAu5J44E/xD9saceiYe5hd"
+  - "login02-ext.g100.cineca.it ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNdstF9lmzZgJYn3p/EvZ9+g1wY9d8/+P0cG60Rex/es0VNtGUXqKzwhx0+xVAgKILSbGz1SSX0FxFOGxYY2VT4="
+  
