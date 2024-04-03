@@ -38,11 +38,3 @@
   tags: ['infra','vm']
 
 
-- name: Add HPC Login Node's host keys to DataLake Server account
-  delegate_to: DataLake_as_a_Service
-  ansible.builtin.known_hosts:
-    name: "{{ hpc_login_node }}"
-    key: "{{ item }}"
-    state: present
-  loop: "{{ hpc_login_node_ssh_host_keys }}"
-  tags: ['infra','vm']
