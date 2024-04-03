@@ -7,3 +7,4 @@ config_server_upload_partition: g100_all_serial  # partition used for uploading 
 config_server_account: EUCC_staff_2  # account for HPC jobs
 config_server_qos: normal  # QoS for HPC jobs
 config_server_mail: massimo.sardo@e4company.com  # email address for info on HPC job status
+config_server_ssh_key: luca-g100 

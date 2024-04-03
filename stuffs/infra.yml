@@ -3,6 +3,9 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: prechecks 
-      import_role: 
+    - include_role: 
         name: openstack-infra
+      tags:
+        - infra
+        - vm
+        - inventory
