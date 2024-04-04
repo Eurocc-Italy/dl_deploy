@@ -15,4 +15,4 @@ dtaas_tui_client_config: 'config_hpc.json'
 #API
 dtaas_api_config: "{{ ansible_env.HOME ~ '/' ~ '.env'}}"
 
-hpc_operator_ssh_prv_key: /tmp/hpc_operator.key  # hpc operator's ssh private key
+hpc_operator_ssh_prv_key: ~/.ssh/luca-hpc  # hpc operator's ssh private key

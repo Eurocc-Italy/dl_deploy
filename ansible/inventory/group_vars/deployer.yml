@@ -1,6 +1,7 @@
 ---
 #Deployer Settings
-virtualenv: /opt/dtaas/
+# virtualenv: /opt/dtaas/
+virtualenv: /home/lbabetto/venv/ansible
 ansible_python_interpreter: "{{ virtualenv is none | ternary('python3', virtualenv ~ '/bin/python' ) }}"
 
 #DataLake Infrastructure Settings

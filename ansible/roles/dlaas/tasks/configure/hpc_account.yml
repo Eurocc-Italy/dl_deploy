@@ -16,12 +16,16 @@
   raw: grep 'module load python' .bashrc || sed -i  '$ a \module load python' .bashrc
   tags: ['hpc'] 
 
-- name: Install python dependences
-  pip:
-    name: "{{ hpc_python_packages }}"
-    virtualenv: "{{ config_server_venv_path }}"
-    virtualenv_command: "python3 -m venv {{config_server_venv_path}}"
-  tags: ['hpc']
+# - name: Install python dependences
+#   pip:
+#     name: "{{ hpc_python_packages }}"
+#     virtualenv: "{{ config_server_venv_path }}"
+#     virtualenv_command: "module load python; python3 -m venv {{config_server_venv_path}}"
+#   tags: ['hpc']
+
+- name: Install python dependences (raw)
+  raw: python3 -m venv {{config_server_venv_path}}
+  tags: ['hpc'] 
 
 - name: Add HPC Login Node's host keys to DataLake Server account
   delegate_to: DataLake_as_a_Service
