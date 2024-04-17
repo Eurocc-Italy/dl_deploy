@@ -41,5 +41,5 @@ dl_security_group_name: 'dlaas_security_group'
 dl_security_group_rules:
   - { protocol: 'tcp', port_range_min: 22, port_range_max: 22, remote_ip_prefix: '{{ setup_ip }}' }
   - { protocol: 'tcp', port_range_min: 27017, port_range_max: 27017, remote_ip_prefix: '{{ login_nodes }}'}
-  #- { protocol: 'tcp', port_range_min: 27017, port_range_max: 27017, remote_ip_prefix: '{{ compute_nodes }}'}
+  - { protocol: 'tcp', port_range_min: 27017, port_range_max: 27017, remote_ip_prefix: '{{ compute_nodes }}'}
   - { protocol: 'tcp', port_range_min: 8080, port_range_max: 8080, remote_ip_prefix: '{{ user_ips }}'}

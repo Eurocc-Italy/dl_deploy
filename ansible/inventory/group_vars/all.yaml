@@ -1,15 +1,16 @@
 ---
 
-openstack_external_network: 'provider_1840'
-#dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64'
-dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2015'
+# openstack_external_network: 'provider_1840'
+openstack_external_network: 'externalNetwork'
+dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64'
+# dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2015'
 
 
-login_nodes: 0.0.0.0/0
-compute_nodes: 0.0.0.0/0
+# login_nodes: 0.0.0.0/0
+# compute_nodes: 0.0.0.0/0
 
-setup_ip: 0.0.0.0/0
-user_ips: 0.0.0.0/0
+# setup_ip: 0.0.0.0/0
+# user_ips: 0.0.0.0/0
 
 hpc_login_node: login02-ext.g100.cineca.it  # hostname of login node
 hpc_login_node_ssh_host_keys:
