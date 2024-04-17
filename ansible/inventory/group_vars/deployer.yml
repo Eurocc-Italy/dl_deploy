@@ -4,8 +4,8 @@
 virtualenv: /home/lbabetto/venv/ansible
 ansible_python_interpreter: "{{ virtualenv is none | ternary('python3', virtualenv ~ '/bin/python' ) }}"
 
-
-dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2015'
+dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64'
+# dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2015'
 
 #DataLake Infrastructure Settings
 dl_private_network: dlaas2_private
