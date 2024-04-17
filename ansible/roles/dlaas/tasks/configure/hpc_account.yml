@@ -17,11 +17,11 @@
     ansible_python_interpreter: "/cineca/prod/opt/compilers/python/3.11.7/gcc--10.2.0/bin/python3"
   tags: ['hpc']
 
-- name: Install python dependences
+- name: Install python dependencies
   pip:
     name: "{{ hpc_python_packages }}"
     virtualenv: "{{ config_server_venv_path }}"
-    virtualenv_command: "python3 -m venv {{config_server_venv_path}}"
+    virtualenv_command: "{{ansible_python_interpreter}} -m venv {{config_server_venv_path}}"
   environment:
     LD_LIBRARY_PATH: "/cineca/prod/opt/compilers/python/3.11.7/gcc--10.2.0/lib/"
   tags: ['hpc']
