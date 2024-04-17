@@ -1,0 +1,18 @@
+- name: Configure DataLake HPC Account
+  hosts: hpc-infra
+  gather_facts: false
+  tasks:
+    - name: raw
+      raw: env
+
+    - name: Load python environment module from .bashrc
+      #shell: "module load python; grep 'module load python' .bashrc &>/dev/null || echo 'module load python' >> .bashrc" 
+      raw: grep 'module load python' .bashrc || sed -i  '$ a \module load python' .bashrc
+      tags: ['hpc'] 
+
+    - name: set python interpreter
+      set_fact:
+        ansible_python_interpreter: "/cineca/prod/opt/compilers/python/3.11.7/gcc--10.2.0/bin/python"
+    - name: pip
+      pip: 
+        name: PyYAML

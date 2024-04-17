@@ -1,0 +1,10 @@
+---
+- name: test
+  hosts: localhost
+  tasks: 
+  - name: test
+    shell: echo $TEST
+    register: a
+    environment:
+      TEST: 'PIPPO'
+
