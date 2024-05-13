@@ -2,4 +2,4 @@
 #List of python pacakegs
 hpc_python_packages:
  - PyYAML
- - dlaas-tui@git+https://lbabetto:glpat-7Njd9GVtxP-ajQqXCXB8@gitlab.hpc.cineca.it/lbabetto/dlaas-tui
+ - dl-tui@git+https://gitlab.hpc.cineca.it/eurocc/dl-tui
