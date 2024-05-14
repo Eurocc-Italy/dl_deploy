@@ -1,7 +1,7 @@
 ---
 #Deployer Settings
 # virtualenv: /opt/dtaas/
-virtualenv: /home/lbabetto/venv/ansible
+virtualenv: /home/lbabetto/venv/datalake
 ansible_python_interpreter: "{{ virtualenv is none | ternary('python3', virtualenv ~ '/bin/python' ) }}"
 
 dl_cloud_image: 'CentOS-8-GenericCloud-8.4.2105-20210603.0.x86_64'
