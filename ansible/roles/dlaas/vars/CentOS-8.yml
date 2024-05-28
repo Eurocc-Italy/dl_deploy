@@ -1,4 +1,5 @@
 ---
+#Centos8 Specific Settings
 #List of Dicts with yum repository infos
 yum_repositories:
   - repository:
