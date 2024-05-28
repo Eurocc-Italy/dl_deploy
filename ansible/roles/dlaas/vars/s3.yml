@@ -1,4 +1,5 @@
 ---
+#S3 configuration
 s3_bucket: s3poc
 # s3_endpoint_url: https://172.18.36.10:6780
 s3_endpoint_url: https://s3ds.g100st.cineca.it

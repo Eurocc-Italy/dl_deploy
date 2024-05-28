@@ -1,18 +1,19 @@
 ---
 # defaults file for dtaas
+#Python Virtualenv directory of DataLake VM
 dl_instance_virtualenv: "/opt/dtaas"
 dl_instance_ansible_python_interpreter: "{{ dl_instance_virtualenv is none | ternary('python3', dl_instance_virtualenv ~ '/bin/python3') }}"
 
-#S3
+#S3 Setting
 s3_config_dir: "{{ ansible_env.HOME ~ '/' ~ '.aws' }}"
 s3_config_file: 'config'
 
-#dtaas-tui
+#dtaas-tui Setting
 dtaas_tui_config_dir: "{{ ansible_env.HOME ~  '/' ~ '.config/dlaas' }}"
 dtaas_tui_server_config: 'config_server.json' 
 dtaas_tui_client_config: 'config_hpc.json'
 
-#API
+#API Settings
 dtaas_api_config: "{{ ansible_env.HOME ~ '/' ~ '.env'}}"
-
+#HPC Facilities
 hpc_operator_ssh_prv_key: ~/.ssh/luca-hpc  # hpc operator's ssh private key

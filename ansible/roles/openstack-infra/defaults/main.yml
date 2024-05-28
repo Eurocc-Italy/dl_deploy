@@ -1,6 +1,7 @@
 ---
+## Defaults variables for openstack-infra
 dl_instance_ansible_python_interpreter: '/usr/bin/python3'
-## defaults file for openstack-infra
+#this variable referes to clouds.yml cloud credential
 dl_cloud: 'openstack'
 
 ##Compute 
@@ -8,7 +9,7 @@ dl_cloud: 'openstack'
 #local paths for generating or importing sshkey to Openstack User Account
 dl_instance_sshpub_path: "{{ lookup('env', 'HOME') ~ '/dtaas_sshkey.pub'}}"
 dl_instance_sshpvt_path: "{{ dl_instance_sshpub_path | regex_replace('\\..*', '') ~ '.key' }}"
-#Instance
+#Instance Specs
 dl_os_sshkey_name: "{{ dl_instance_sshpub_path | basename | regex_replace('\\..*', '')}}"
 dl_instance_name: 'DataLake_as_a_Service'
 dl_instance_ram: 30000 #MB

@@ -1,4 +1,5 @@
 ---
+#API Settings
 pfs_path_prefix: /g100_s3/DRES_s3poc
 # Constants for JWT token generation and verification
 jwt_issuer: "cineca_or_ifab"
