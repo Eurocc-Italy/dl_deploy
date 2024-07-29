@@ -1,0 +1,22 @@
+---
+- include_vars: nginx.yml
+- name: Ensure Ngnix Configuration
+  become: true
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest:  "{{ nginx_conf_path }}"
+    mode: "0666"
+  #notify: restart-dtaas-api
+  vars:
+    dl_vm_internal_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+
+- name: Ensure httpd_can_network_relay 1 in selinux
+  command:
+    cmd: "sudo setsebool -P httpd_can_network_relay 1"
+
+- name: Enable service Nginx 
+  become: true
+  ansible.builtin.systemd_service:
+    name: nginx
+    enabled: true
+    state: started

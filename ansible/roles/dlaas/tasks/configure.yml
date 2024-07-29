@@ -1,6 +1,8 @@
 ---
+- include_tasks: configure/certbot.yml
 - include_tasks: configure/mongodb.yml
 - include_tasks: configure/s3.yml
+- include_tasks: configure/nginx.yml
 - include_tasks: configure/api.yml
 - include_tasks: configure/dtaas-tui.yml
 
