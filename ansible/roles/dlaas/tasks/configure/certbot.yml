@@ -1,0 +1,9 @@
+---
+- include_vars: certbot.yml
+- name: generate TLS Certifitate with Let's Encrypt Certbot
+  become: true
+  command: 
+    cmd: "{{ 'certbot run -n --nginx --agree-tos -d ' ~ dl_vm_internal_ip ~ '.nip.io -m  ' ~  certbot_email_account  }}"
+    creates: "/etc/letsencrypt/live/{{ dl_vm_internal_ip ~ '.nip.io' }}/fullchain.pem;"
+  vars:
+    dl_vm_internal_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
