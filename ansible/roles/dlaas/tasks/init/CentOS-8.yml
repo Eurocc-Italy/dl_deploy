@@ -17,6 +17,10 @@
   become: true
   package:
     name: "{{system_packages}}"
+- name: Install system packages from Epel repository
+  become: true
+  package:
+    name: "{{system_packages_epel}}"
 #TODO replace it, setting appropriate python3.9 interpreter
 - name: Set Python 3.9 as the alternative for python3
   become: true

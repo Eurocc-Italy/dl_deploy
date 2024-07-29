@@ -13,6 +13,7 @@
 
 - name: Configure DataLake Server
   hosts: cloud-infra 
+  gather_facts: true
   tasks:
     - include_role: 
         name: dlaas

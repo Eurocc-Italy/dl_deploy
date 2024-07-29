@@ -27,9 +27,19 @@ yum_repositories:
       filename: '/etc/yum.repos.d/CentOS-Linux-MongoDB'
       gpgkey: 'https://www.mongodb.org/static/pgp/server-4.4.asc'
 
+
 #List of system packages to install
 system_packages:
   - python39
   - git
   - epel-release
   - mongodb-org
+  - nginx
+
+system_packages_epel:
+  - certbot 
+  - python3-certbot-nginx
+  
+
+
+
