@@ -6,4 +6,6 @@
     cmd: "{{ 'certbot run -n --nginx --agree-tos -d ' ~ dl_vm_internal_ip ~ '.nip.io -m  ' ~  certbot_email_account  }}"
     creates: "/etc/letsencrypt/live/{{ dl_vm_internal_ip ~ '.nip.io' }}/fullchain.pem;"
   vars:
-    dl_vm_internal_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    # dl_vm_internal_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    dl_vm_internal_ip: "{{ lookup('ini', 'DataLake_as_a_Service ansible_host', file='inventory/hosts', section='cloud-infra') }}"
+
