@@ -10,7 +10,6 @@
         - inventory
     - meta: refresh_inventory
 
-
 - name: Configure DataLake Server
   hosts: cloud-infra 
   gather_facts: true
@@ -23,6 +22,19 @@
         name: dlaas
       vars:
         ansible_python_interpreter: "{{ hostvars[inventory_hostname]['ansible_python_interpreter'] }}"
+
+- name: Remove port 80 left open for Certbot
+  hosts: deployer
+  tasks:
+    - name: Remove port 80 left open for Certbot
+      openstack.cloud.security_group_rule:
+        cloud: openstack
+        security_group: dlaas_security_group
+        protocol: tcp
+        port_range_min: 80
+        port_range_max: 80 
+        remote_ip_prefix: 0.0.0.0/0
+        state: absent
 
 - name: Configure DataLake HPC Account
   hosts: hpc-infra
