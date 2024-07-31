@@ -1,5 +1,13 @@
 ---
 - include_vars: certbot.yml
+
+- name: Enable service Nginx 
+  become: true
+  ansible.builtin.systemd_service:
+    name: nginx
+    enabled: true
+    state: started
+    
 - name: generate TLS Certifitate with Let's Encrypt Certbot
   become: true
   command: 
