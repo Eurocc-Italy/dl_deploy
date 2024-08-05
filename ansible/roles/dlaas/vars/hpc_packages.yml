@@ -2,4 +2,4 @@
 #List of python pacakegs
 hpc_python_packages:
  - PyYAML
- - dl-tui@git+https://github.com/Eurocc-Italy/dl_tui
+ - dl_tui@git+https://github.com/Eurocc-Italy/dl_tui
