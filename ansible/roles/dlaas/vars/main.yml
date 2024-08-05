@@ -7,7 +7,7 @@ pip_packages:
   - setuptools
   - swagger-ui-bundle
   - pymongo == 4.5.0
-  - swagger-server @ git+https://gitlab.hpc.cineca.it/eurocc/dl-api#subdirectory=datalake_api
+  - swagger-server @ git+https://github.com/Eurocc-Italy/dl_api#subdirectory=datalake_api
   - boto
   - boto3
 
