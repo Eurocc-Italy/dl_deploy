@@ -4,4 +4,4 @@ This repository is part of the EuroCC-Italy Data Lake as a Service codebase. The
 - [`dl_api`](https://github.com/Eurocc-Italy/dl_api): (API)
 - [`dl_deploy`](https://github.com/Eurocc-Italy/dl_deploy): (Ansible playbook for self-deploy)
 
-The User Guide can be found in PDF form in this repository.
+The User Guide can be found in PDF form at this [link](https://github.com/Eurocc-Italy/dl_deploy/blob/main/Data_Lake_Ready_To_Use_V1.0.pdf).
