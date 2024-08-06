@@ -19,3 +19,21 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+The Data Lake Ready to Use software stack includes the following third-party libraries (respective licenses are reported in parentheses):
+
+sh (MIT)
+wheel (MIT)
+pymongo (Apache 2.0)
+python-dateutil (Apache 2.0)
+urllib3 (MIT)
+pyparsing (MIT)
+sqlparse (Apache 2.0)
+boto3 (Apache 2.0)
+requests (Apache 2.0)
+connexion (Apache 2.0)
+setuptools (MIT)
+swagger-ui-bundle (Apache 2.0)
+python-decouple (MIT)
+python-dotenv (BSD-3-Clause)
+python-jose (MIT)
