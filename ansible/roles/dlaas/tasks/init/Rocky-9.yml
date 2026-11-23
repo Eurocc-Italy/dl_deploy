@@ -1,0 +1,45 @@
+---
+- name: Check installed MongoDB packages
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Refuse an unsupported MongoDB upgrade
+  ansible.builtin.assert:
+    that:
+      - item.version is match('^7\.0\.')
+    fail_msg: >-
+      MongoDB {{ item.version }} is installed. This role does not migrate
+      existing MongoDB installations to 7.0; migrate the database separately.
+  loop: "{{ ansible_facts.packages['mongodb-org-server'] | default([]) }}"
+  loop_control:
+    label: "{{ item.version }}"
+
+- name: Install Rocky Linux system packages
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - python3
+      - python3-pip
+      - git
+      - nginx
+      - epel-release
+    state: present
+
+- name: Configure MongoDB 7.0 repository
+  become: true
+  ansible.builtin.yum_repository:
+    name: mongodb-org-7.0
+    description: MongoDB 7.0 Repository
+    baseurl: https://repo.mongodb.org/yum/redhat/9/mongodb-org/7.0/$basearch/
+    gpgcheck: true
+    gpgkey: https://pgp.mongodb.com/server-7.0.asc
+    enabled: true
+
+- name: Install MongoDB and Certbot packages
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - mongodb-org-7.0.*
+      - certbot
+      - python3-certbot-nginx
+    state: present

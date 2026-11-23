@@ -6,7 +6,14 @@ A brief description of the role goes here.
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+OS initialization is available for CentOS 8 and Rocky Linux 9. Select an
+available Rocky Linux 9 image with `dl_cloud_image` when deploying on Rocky.
+Rocky Linux 10 is not supported by this role.
+
+On Rocky Linux 9, the role installs MongoDB 7.0, compatible with the role's
+pinned PyMongo version. MongoDB 7.0 reaches end of support on August 31, 2027.
+This setup is intended for a fresh database; the role does not migrate an
+existing MongoDB installation or its data. Plan a supported migration separately.
 
 Role Variables
 --------------
