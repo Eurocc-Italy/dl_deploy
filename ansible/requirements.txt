@@ -1,2 +1,2 @@
-ansible
-openstacksdk
+ansible==9.*
+openstacksdk>=1.0.0,<2.0.0
