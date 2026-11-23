@@ -3,10 +3,9 @@
 pip_packages: 
   - connexion == 2.14.2
   - connexion[swagger-ui] 
-  - python_dateutil == 2.6.0
   - setuptools
   - swagger-ui-bundle
-  - pymongo == 4.5.0
+  - pymongo == 4.6.3
   - swagger-server @ git+https://github.com/Eurocc-Italy/dl_api#subdirectory=datalake_api
   - boto
   - boto3
