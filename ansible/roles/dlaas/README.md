@@ -15,6 +15,9 @@ pinned PyMongo version. MongoDB 7.0 reaches end of support on August 31, 2027.
 This setup is intended for a fresh database; the role does not migrate an
 existing MongoDB installation or its data. Plan a supported migration separately.
 
+Certbot obtains the TLS certificate; the role configures Nginx to use it and
+installs a deploy hook to reload Nginx after that certificate is renewed.
+
 Role Variables
 --------------
 
