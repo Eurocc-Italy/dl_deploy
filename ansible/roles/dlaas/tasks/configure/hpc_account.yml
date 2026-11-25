@@ -1,29 +1,71 @@
 ---
-#this is a very specific task to setup a python environment in G100 cineca account
 - include_vars: "{{item}}"
   loop:
     - hpc_packages.yml
     - dtaas-tui.yml
   tags: ['hpc'] 
 
-#- name: Load python environment module from .bashrc
-#  #shell: "module load python; grep 'module load python' .bashrc &>/dev/null || echo 'module load python' >> .bashrc" 
-#  raw: egrep '^module load python' .bashrc || sed -i  '$ a \module load python' .bashrc
-#  tags: ['hpc'] 
+- name: Check HPC login node connection
+  ansible.builtin.raw: "true"
+  check_mode: false
+  changed_when: false
+  tags: ['hpc']
 
+- name: Find a working Python interpreter on the HPC login node
+  ansible.builtin.raw: |
+    bash -lc '
+      find_python() {
+        for candidate in python3 python; do
+          if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c "import sys; sys.exit(sys.version_info < (3, 6))" >/dev/null 2>&1; then
+            command -v "$candidate"
+            return 0
+          fi
+        done
+        return 1
+      }
+      python=$(find_python) || {
+        module load python >&2 || exit 1
+        python=$(find_python) || exit 1
+      }
+      "$python" -c "import json, os, re, sys; print(json.dumps({\"interpreter\": sys.executable, \"environment\": {k: v for k, v in os.environ.items() if re.fullmatch(r\"[A-Za-z_][A-Za-z0-9_]*\", k)}}))"
+    '
+  register: hpc_python_probe
+  check_mode: false
+  changed_when: false
+  failed_when: false
+  no_log: true
+  tags: ['hpc']
 
-- name: Set python ansible_python_interpreter
-  set_fact:
-    ansible_python_interpreter: "/cineca/prod/opt/compilers/python/3.11.7/gcc--10.2.0/bin/python3"
+- name: Report missing HPC Python
+  ansible.builtin.fail:
+    msg: "No working Python 3.6 or newer was found on the HPC login node, and loading the python environment module failed or did not provide one."
+  when: hpc_python_probe.rc != 0
+  tags: ['hpc']
+
+- name: Set HPC Python interpreter and environment
+  ansible.builtin.set_fact:
+    ansible_python_interpreter: "{{ (hpc_python_probe.stdout_lines | last | from_json).interpreter }}"
+    hpc_python_environment: "{{ (hpc_python_probe.stdout_lines | last | from_json).environment }}"
+  no_log: true
   tags: ['hpc']
 
 - name: Install python dependencies
-  pip:
-    name: "{{ hpc_python_packages }}"
-    virtualenv: "{{ config_server_venv_path }}"
-    virtualenv_command: "{{ansible_python_interpreter}} -m venv {{config_server_venv_path}}"
-  environment:
-    LD_LIBRARY_PATH: "/cineca/prod/opt/compilers/python/3.11.7/gcc--10.2.0/lib/"
+  block:
+    - name: Install packages in the HPC virtual environment
+      ansible.builtin.pip:
+        name: "{{ hpc_python_packages }}"
+        virtualenv: "{{ config_server_venv_path }}"
+        virtualenv_command: "{{ ansible_python_interpreter | quote }} -m venv"
+      environment: "{{ hpc_python_environment }}"
+      register: hpc_pip_result
+      no_log: true
+  rescue:
+    - name: Report HPC Python dependency installation failure
+      ansible.builtin.fail:
+        msg: >-
+          {{ hpc_pip_result.msg | default('Python dependency installation failed.') }}
+          {{ hpc_pip_result.module_stderr | default('') }}
+          {{ hpc_pip_result.module_stdout | default('') }}
   tags: ['hpc']
 
 - name: Add HPC Login Node's host keys to DataLake Server account
