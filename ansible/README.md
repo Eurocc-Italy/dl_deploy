@@ -23,3 +23,10 @@ installing; on Ubuntu these are provided by `build-essential` and
 only the client version does not necessarily change the SDK used by Ansible.
 If another `openstack.cloud` collection is installed, check which version
 Ansible selects with `ansible-galaxy collection list openstack.cloud`.
+
+The HPC account setup uses a working `python3` or `python` from the login
+shell. If neither is available, it runs `module load python` in a Bash login
+shell and uses the resulting environment to create the virtual environment and
+install dependencies. The Python module must provide a version supported by
+Ansible and the required Python packages. If the Python module supplies shared
+libraries, it must also be loaded when the virtual environment is used later.
